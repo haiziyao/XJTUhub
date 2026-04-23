@@ -1,6 +1,7 @@
 package org.xjtuhub.auth;
 
 import org.xjtuhub.common.api.BadgeDto;
+import org.xjtuhub.common.api.IdentityBindingDto;
 
 import java.util.List;
 
@@ -13,6 +14,8 @@ public record CurrentUserDto(
         String nameColor,
         String primaryIdentityProvider,
         String lastLoginProvider,
+        String identitySummary,
+        List<IdentityBindingDto> identityBindings,
         List<BadgeDto> displayBadges
 ) {
 }

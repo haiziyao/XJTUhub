@@ -15,6 +15,8 @@ interface AuthStore {
 
     Optional<StoredUser> findUserById(long userId);
 
+    List<StoredIdentityBinding> findIdentityBindingsByUserId(long userId);
+
     StoredUser createUserWithEmailIdentity(String email, String nickname, Instant now);
 
     void markEmailIdentityVerified(long userId, String email, Instant now);
@@ -87,6 +89,14 @@ interface AuthStore {
             boolean success,
             String failureReason,
             Instant createdAt
+    ) {
+    }
+
+    record StoredIdentityBinding(
+            String provider,
+            String providerDisplay,
+            String verificationStatus,
+            Instant lastUsedAt
     ) {
     }
 }

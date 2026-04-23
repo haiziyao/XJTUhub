@@ -87,7 +87,12 @@ class AuthFlowTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.nickname").value("student"))
                 .andExpect(jsonPath("$.data.displayBadges[0].code").value("email_verified"))
-                .andExpect(jsonPath("$.data.lastLoginProvider").value("email"));
+                .andExpect(jsonPath("$.data.lastLoginProvider").value("email"))
+                .andExpect(jsonPath("$.data.identitySummary").value("邮箱已验证"))
+                .andExpect(jsonPath("$.data.identityBindings", hasSize(1)))
+                .andExpect(jsonPath("$.data.identityBindings[0].provider").value("email"))
+                .andExpect(jsonPath("$.data.identityBindings[0].verificationStatus").value("verified"))
+                .andExpect(jsonPath("$.data.identityBindings[0].primary").value(true));
 
         mockMvc.perform(get("/api/v1/auth/sessions").cookie(sessionCookie))
                 .andExpect(status().isOk())
@@ -242,6 +247,21 @@ class AuthFlowTests {
                 .andExpect(jsonPath("$.data.items[1].failureReason").value("token_invalid"))
                 .andExpect(jsonPath("$.data.items[0].ipAddress").doesNotExist())
                 .andExpect(jsonPath("$.data.items.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
+    }
+
+    @Test
+    void campusScanReservedEndpointsReturnStableNotImplementedError() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/campus-scan/sessions"))
+                .andExpect(status().isNotImplemented())
+                .andExpect(jsonPath("$.error.code").value("AUTH_CAMPUS_SCAN_RESERVED"));
+
+        mockMvc.perform(get("/api/v1/auth/campus-scan/sessions/{sceneId}", "scene-test"))
+                .andExpect(status().isNotImplemented())
+                .andExpect(jsonPath("$.error.code").value("AUTH_CAMPUS_SCAN_RESERVED"));
+
+        mockMvc.perform(post("/api/v1/auth/campus-scan/sessions/{sceneId}/confirm", "scene-test"))
+                .andExpect(status().isNotImplemented())
+                .andExpect(jsonPath("$.error.code").value("AUTH_CAMPUS_SCAN_RESERVED"));
     }
 
     private JsonNode readJson(MvcResult result) throws Exception {

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import org.xjtuhub.common.api.CursorPageResponse;
+import org.xjtuhub.common.api.IdentityBindingDto;
 import org.xjtuhub.common.api.OffsetPageResponse;
 
 import java.util.List;
@@ -39,6 +40,19 @@ class CommonContractTests {
         assertThat(json).contains("\"items\":[\"a\"]");
         assertThat(json).contains("\"nextCursor\":\"next_123\"");
         assertThat(json).contains("\"hasNext\":true");
+    }
+
+    @Test
+    void identityBindingDtoUsesStableFieldNames() throws Exception {
+        IdentityBindingDto dto = new IdentityBindingDto("email", "student@example.com", "verified", true, true);
+
+        String json = objectMapper.writeValueAsString(dto);
+
+        assertThat(json).contains("\"provider\":\"email\"");
+        assertThat(json).contains("\"providerDisplay\":\"student@example.com\"");
+        assertThat(json).contains("\"verificationStatus\":\"verified\"");
+        assertThat(json).contains("\"primary\":true");
+        assertThat(json).contains("\"lastUsed\":true");
     }
 
     @Test

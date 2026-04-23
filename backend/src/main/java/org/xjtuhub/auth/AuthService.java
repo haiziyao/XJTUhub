@@ -7,6 +7,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 import org.xjtuhub.common.api.BadgeDto;
 import org.xjtuhub.common.api.BusinessException;
+import org.xjtuhub.common.api.IdentityBindingDto;
 import org.xjtuhub.common.api.OffsetPageResponse;
 import org.xjtuhub.common.support.TimeProvider;
 
@@ -180,6 +181,7 @@ public class AuthService {
     private CurrentUserDto currentUserFor(long userId) {
         AuthStore.StoredUser user = authStore.findUserById(userId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found."));
+        List<AuthStore.StoredIdentityBinding> identityBindings = authStore.findIdentityBindingsByUserId(userId);
         boolean premium = authStore.hasActivePremiumMembership(userId, timeProvider.now());
         return new CurrentUserDto(
                 String.valueOf(user.id()),
@@ -190,6 +192,8 @@ public class AuthService {
                 premium ? "red" : "default",
                 user.primaryIdentityProvider(),
                 user.lastLoginProvider(),
+                identitySummary(user, identityBindings),
+                toIdentityBindingDtos(user, identityBindings),
                 displayBadges(user, premium)
         );
     }
@@ -217,6 +221,38 @@ public class AuthService {
                 session.lastSeenAt(),
                 session.id() == currentSessionId
         );
+    }
+
+    private String identitySummary(AuthStore.StoredUser user, List<AuthStore.StoredIdentityBinding> identityBindings) {
+        boolean hasCampusVerified = "campus_app_verified".equals(user.authLevel())
+                || identityBindings.stream().anyMatch(binding ->
+                "campus_app".equals(binding.provider()) && "verified".equals(binding.verificationStatus()));
+        if (hasCampusVerified) {
+            return "校园已认证";
+        }
+        boolean hasCampusBound = identityBindings.stream().anyMatch(binding ->
+                "campus_app".equals(binding.provider()) && !"revoked".equals(binding.verificationStatus()));
+        boolean hasEmailVerified = identityBindings.stream().anyMatch(binding ->
+                "email".equals(binding.provider()) && "verified".equals(binding.verificationStatus()));
+        if (hasCampusBound && hasEmailVerified) {
+            return "邮箱已验证（已绑定校园）";
+        }
+        if (hasEmailVerified) {
+            return "邮箱已验证";
+        }
+        return "邮箱未验证";
+    }
+
+    private List<IdentityBindingDto> toIdentityBindingDtos(AuthStore.StoredUser user, List<AuthStore.StoredIdentityBinding> identityBindings) {
+        return identityBindings.stream()
+                .map(binding -> new IdentityBindingDto(
+                        binding.provider(),
+                        binding.providerDisplay(),
+                        binding.verificationStatus(),
+                        binding.provider().equals(user.primaryIdentityProvider()),
+                        binding.provider().equals(user.lastLoginProvider())
+                ))
+                .toList();
     }
 
     private AuthStore.StoredSession requireSession(HttpServletRequest request) {

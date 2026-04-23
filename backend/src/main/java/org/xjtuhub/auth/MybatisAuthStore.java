@@ -103,6 +103,17 @@ class MybatisAuthStore implements AuthStore {
     }
 
     @Override
+    public List<StoredIdentityBinding> findIdentityBindingsByUserId(long userId) {
+        return userAuthIdentityMapper.selectList(
+                new LambdaQueryWrapper<UserAuthIdentityEntity>()
+                        .eq(UserAuthIdentityEntity::getUserId, userId)
+                        .isNull(UserAuthIdentityEntity::getDeletedAt)
+                        .orderByDesc(UserAuthIdentityEntity::getLastUsedAt)
+                        .orderByDesc(UserAuthIdentityEntity::getCreatedAt)
+        ).stream().map(this::toStoredIdentityBinding).toList();
+    }
+
+    @Override
     public StoredUser createUserWithEmailIdentity(String email, String nickname, Instant now) {
         long userId = idGenerator.nextId();
         UserEntity user = new UserEntity();
@@ -340,6 +351,15 @@ class MybatisAuthStore implements AuthStore {
                 entity.isSuccess(),
                 entity.getFailureReason(),
                 instant(entity.getCreatedAt())
+        );
+    }
+
+    private StoredIdentityBinding toStoredIdentityBinding(UserAuthIdentityEntity entity) {
+        return new StoredIdentityBinding(
+                entity.getProvider(),
+                entity.getProviderDisplay(),
+                entity.getVerificationStatus(),
+                instant(entity.getLastUsedAt())
         );
     }
 

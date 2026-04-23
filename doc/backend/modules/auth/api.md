@@ -95,6 +95,16 @@ POST /api/v1/auth/email-sessions
     "nameColor": "default",
     "primaryIdentityProvider": "email",
     "lastLoginProvider": "email",
+    "identitySummary": "邮箱已验证",
+    "identityBindings": [
+      {
+        "provider": "email",
+        "providerDisplay": "student@example.com",
+        "verificationStatus": "verified",
+        "primary": true,
+        "lastUsed": true
+      }
+    ],
     "displayBadges": [
       {
         "type": "identity",
@@ -137,7 +147,23 @@ Cookie 行为：
 - `AUTH_EMAIL_TOKEN_EXPIRED`
 - `AUTH_EMAIL_TOKEN_CONSUMED`
 
-## 3. 获取当前用户会话列表
+## 3. 校园扫码登录保留接口
+
+以下接口已保留，但当前阶段不实现真实校园协议：
+
+```text
+POST /api/v1/auth/campus-scan/sessions
+GET  /api/v1/auth/campus-scan/sessions/{sceneId}
+POST /api/v1/auth/campus-scan/sessions/{sceneId}/confirm
+```
+
+当前行为：
+
+- 统一返回 `501 Not Implemented`。
+- 统一错误码为 `AUTH_CAMPUS_SCAN_RESERVED`。
+- 该返回表示接口边界已经预留，后续接入真实校园官方 APP 协议时沿用此路由前缀。
+
+## 4. 获取当前用户会话列表
 
 ```text
 GET /api/v1/auth/sessions
@@ -177,7 +203,7 @@ GET /api/v1/auth/sessions
 
 - `AUTH_LOGIN_REQUIRED`
 
-## 4. 注销当前会话
+## 5. 注销当前会话
 
 ```text
 DELETE /api/v1/auth/sessions/current
@@ -199,7 +225,7 @@ DELETE /api/v1/auth/sessions/current
 
 - `AUTH_LOGIN_REQUIRED`
 
-## 5. 按会话 ID 注销会话
+## 6. 按会话 ID 注销会话
 
 ```text
 DELETE /api/v1/auth/sessions/{sessionId}
@@ -229,7 +255,7 @@ DELETE /api/v1/auth/sessions/{sessionId}
 - `AUTH_FORBIDDEN`
 - `AUTH_SESSION_EXPIRED`
 
-## 6. 获取登录历史
+## 7. 获取登录历史
 
 ```text
 GET /api/v1/auth/login-events
@@ -270,7 +296,7 @@ GET /api/v1/auth/login-events
 
 - `AUTH_LOGIN_REQUIRED`
 
-## 7. 当前实现说明
+## 8. 当前实现说明
 
 - 运行环境存在数据库和 MyBatis 会话工厂时，持久层使用 `MybatisAuthStore`。
 - 测试环境默认回退到 `InMemoryAuthStore`。
@@ -278,3 +304,5 @@ GET /api/v1/auth/login-events
 - 数据访问层已经切换到 MyBatis / MyBatis-Plus。
 - 会话最近活跃时间通过 `sessions.last_seen_at` 维护。
 - 验证码校验限流当前通过应用层存储实现，后续可以替换为 Redis。
+- 当前用户接口会返回后端计算的 `identitySummary` 和 `identityBindings`，供前端在昵称后展示身份来源与绑定情况。
+- 校园扫码登录目前只预留接口边界，不实现任何伪生产协议逻辑。

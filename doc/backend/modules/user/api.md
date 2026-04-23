@@ -35,6 +35,16 @@ GET /api/v1/users/me
   "nameColor": "default",
   "primaryIdentityProvider": "email",
   "lastLoginProvider": "email",
+  "identitySummary": "邮箱已验证",
+  "identityBindings": [
+    {
+      "provider": "email",
+      "providerDisplay": "student@example.com",
+      "verificationStatus": "verified",
+      "primary": true,
+      "lastUsed": true
+    }
+  ],
   "displayBadges": [
     {
       "type": "identity",
@@ -50,6 +60,8 @@ GET /api/v1/users/me
 
 - 用户存在有效大会员时，`nameColor` 为 `red`。
 - `displayBadges` 由后端计算。
+- `identitySummary` 由后端计算，可直接用于昵称后的身份展示文案。
+- `identityBindings` 返回当前账号已绑定的登录身份列表，供前端渲染身份标记。
 
 当前错误码：
 

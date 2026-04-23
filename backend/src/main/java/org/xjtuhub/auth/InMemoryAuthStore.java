@@ -20,6 +20,7 @@ class InMemoryAuthStore implements AuthStore {
     private final Map<Long, StoredEmailToken> tokens = new ConcurrentHashMap<>();
     private final Map<Long, StoredUser> users = new ConcurrentHashMap<>();
     private final Map<String, Long> userIdByEmail = new ConcurrentHashMap<>();
+    private final Map<Long, List<StoredIdentityBinding>> identityBindingsByUserId = new ConcurrentHashMap<>();
     private final Map<Long, StoredSession> sessions = new ConcurrentHashMap<>();
     private final Map<Long, MembershipRecord> memberships = new ConcurrentHashMap<>();
     private final Map<Long, StoredLoginEvent> loginEvents = new ConcurrentHashMap<>();
@@ -76,10 +77,18 @@ class InMemoryAuthStore implements AuthStore {
     }
 
     @Override
+    public List<StoredIdentityBinding> findIdentityBindingsByUserId(long userId) {
+        return identityBindingsByUserId.getOrDefault(userId, List.of()).stream().toList();
+    }
+
+    @Override
     public StoredUser createUserWithEmailIdentity(String email, String nickname, Instant now) {
         StoredUser user = new StoredUser(idGenerator.nextId(), nickname, null, null, "active", "email_user", "email", "email");
         users.put(user.id(), user);
         userIdByEmail.put(email, user.id());
+        identityBindingsByUserId.put(user.id(), new ArrayList<>(List.of(
+                new StoredIdentityBinding("email", email, "verified", now)
+        )));
         return user;
     }
 
@@ -100,6 +109,10 @@ class InMemoryAuthStore implements AuthStore {
                 user.primaryIdentityProvider() == null ? "email" : user.primaryIdentityProvider(),
                 "email"
         ));
+        List<StoredIdentityBinding> bindings = new ArrayList<>(identityBindingsByUserId.getOrDefault(userId, List.of()));
+        bindings.removeIf(binding -> "email".equals(binding.provider()) && email.equals(binding.providerDisplay()));
+        bindings.add(new StoredIdentityBinding("email", email, "verified", now));
+        identityBindingsByUserId.put(userId, bindings);
     }
 
     @Override
