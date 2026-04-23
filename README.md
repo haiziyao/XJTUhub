@@ -1,6 +1,28 @@
 # XJTUhub
 一个多语言，分布式的大型论坛资源站，欢迎大家一起建设，探讨
 
+## 当前阶段
+
+XJTUhub 目前处于产品和工程约束设计阶段。实现前必须先完成后端 PRD、前端页面 spec、架构约束和开发计划。
+
+Phase 1 的产品优先级：
+
+1. 社区讨论
+2. 资源共享
+3. 信息聚合
+4. 校园工具、社团、竞赛等能力后续扩展
+
+## 文档入口
+
+- Agent 工作入口：`Agent.md`
+- 执行看板：`TODO.md`
+- 产品约束：`doc/product/product-constraints.md`
+- 分阶段路线：`doc/product/phase-roadmap.md`
+- 信息架构：`doc/product/information-architecture.md`
+- 后端架构：`doc/backend/backend-architecture.md`
+- 前端工作流：`doc/frontend/frontend-workflow.md`
+- 共享开发流程：`doc/shared/dev-workflow.md`
+
 ## 前缘
 * 大学的资源纷繁复杂，XJTU应该值得一个大型的资源站点，但是目前并没有相应的"产品"。
 * XJTUer获取资料的途径主要依赖于一些QQ群，校园集市，或者一些其他的地方
@@ -27,4 +49,3 @@
 #### 接口文档
 
 #### 技术选型
-
