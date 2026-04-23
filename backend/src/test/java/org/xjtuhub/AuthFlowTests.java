@@ -1,0 +1,126 @@
+package org.xjtuhub;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.servlet.http.Cookie;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.blankOrNullString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest(properties = {
+        "xjtuhub.auth.email.debug-return-token=true"
+})
+@AutoConfigureMockMvc
+class AuthFlowTests {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void emailAuthFlowCreatesSessionAndCurrentUser() throws Exception {
+        MvcResult tokenResult = mockMvc.perform(post("/api/v1/auth/email-tokens")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "student@example.com",
+                                  "purpose": "login"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value("student@example.com"))
+                .andExpect(jsonPath("$.data.purpose").value("login"))
+                .andExpect(jsonPath("$.data.delivery").value("debug_return"))
+                .andExpect(jsonPath("$.data.token", not(blankOrNullString())))
+                .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
+                .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)))
+                .andReturn();
+
+        String token = readJson(tokenResult).at("/data/token").asText();
+
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/email-sessions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "student@example.com",
+                                  "purpose": "login",
+                                  "token": "%s",
+                                  "deviceLabel": "Chrome on Windows"
+                                }
+                                """.formatted(token)))
+                .andExpect(status().isOk())
+                .andExpect(cookie().exists("XJTUHUB_SESSION"))
+                .andExpect(jsonPath("$.data.user.nickname").value("student"))
+                .andExpect(jsonPath("$.data.user.authLevel").value("email_user"))
+                .andExpect(jsonPath("$.data.user.nameColor").value("default"))
+                .andExpect(jsonPath("$.data.user.displayBadges", hasSize(1)))
+                .andExpect(jsonPath("$.data.user.displayBadges[0].code").value("email_verified"))
+                .andExpect(jsonPath("$.data.session.loginProvider").value("email"))
+                .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
+                .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)))
+                .andReturn();
+
+        Cookie sessionCookie = loginResult.getResponse().getCookie("XJTUHUB_SESSION");
+
+        mockMvc.perform(get("/api/v1/users/me").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nickname").value("student"))
+                .andExpect(jsonPath("$.data.displayBadges[0].code").value("email_verified"))
+                .andExpect(jsonPath("$.data.lastLoginProvider").value("email"));
+
+        mockMvc.perform(get("/api/v1/auth/sessions").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items", hasSize(1)))
+                .andExpect(jsonPath("$.data.items[0].current").value(true))
+                .andExpect(jsonPath("$.data.items[0].loginProvider").value("email"))
+                .andExpect(jsonPath("$.data.items[0].deviceLabel").value("Chrome on Windows"));
+
+        mockMvc.perform(delete("/api/v1/auth/sessions/current").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("XJTUHUB_SESSION", 0))
+                .andExpect(jsonPath("$.data.revoked").value(true));
+
+        mockMvc.perform(get("/api/v1/users/me").cookie(sessionCookie))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("AUTH_LOGIN_REQUIRED"));
+    }
+
+    @Test
+    void invalidEmailTokenReturnsStableErrorCode() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email-sessions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "student@example.com",
+                                  "purpose": "login",
+                                  "token": "bad-token"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.data").doesNotExist())
+                .andExpect(jsonPath("$.error.code").value("AUTH_EMAIL_TOKEN_INVALID"))
+                .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
+                .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
+    }
+
+    private JsonNode readJson(MvcResult result) throws Exception {
+        return objectMapper.readTree(result.getResponse().getContentAsByteArray());
+    }
+}

@@ -13,6 +13,12 @@ The current backend skeleton includes:
 - `requestId` and `durationMs` support.
 - Health endpoint at `GET /api/v1/health`.
 - Dependency health endpoint at `GET /api/v1/health/dependencies`.
+- Auth/user MVP endpoints:
+  - `POST /api/v1/auth/email-tokens`
+  - `POST /api/v1/auth/email-sessions`
+  - `GET /api/v1/auth/sessions`
+  - `DELETE /api/v1/auth/sessions/current`
+  - `GET /api/v1/users/me`
 - Flyway migrations mirrored from `../database/mysql`.
 - Environment variable placeholders for MySQL, Redis, and MinIO.
 

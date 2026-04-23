@@ -18,6 +18,13 @@ spring:
       password: ${REDIS_PASSWORD:}
 
 xjtuhub:
+  auth:
+    email:
+      token-ttl-minutes: ${AUTH_EMAIL_TOKEN_TTL_MINUTES:10}
+      debug-return-token: ${AUTH_EMAIL_DEBUG_RETURN_TOKEN:false}
+    session:
+      cookie-name: ${AUTH_SESSION_COOKIE_NAME:XJTUHUB_SESSION}
+      ttl-days: ${AUTH_SESSION_TTL_DAYS:30}
   mysql:
     jdbc-url: ${MYSQL_JDBC_URL:}
     username: ${MYSQL_USERNAME:}
