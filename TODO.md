@@ -4,7 +4,8 @@ This file is the live execution board. Keep completed items visible for a while 
 
 ## Planned
 
-- [ ] Write the first backend PRD for the Phase 1 community/content foundation.
+- [ ] Review global backend data/API foundation PRDs with the project owner.
+- [ ] Write the first module PRD after the global foundation is approved.
 - [ ] Create the implementation plan after the spec is approved.
 - [ ] Scaffold the Nuxt 3 frontend only after frontend page specs and visual workflow inputs exist.
 - [ ] Scaffold the Spring Boot modular monolith after backend PRD and architecture plan are approved.
@@ -24,3 +25,4 @@ This file is the live execution board. Keep completed items visible for a while 
 - [x] Choose Nuxt 3 for frontend and Spring Boot modular monolith for backend.
 - [x] Choose Elasticsearch for Phase 1 search.
 - [x] Establish baseline constraint documents.
+- [x] Draft global backend data/API foundation PRDs.

@@ -37,6 +37,15 @@ XJTUhub uses documentation-first development. This map explains where each kind 
 | `backend/security-and-moderation.md` | Login, permissions, moderation, anonymity, reports, dislikes, audit, and rate limits. |
 | `backend/testing.md` | Backend testing expectations and high-risk coverage areas. |
 
+### Backend PRDs
+
+| Document | Purpose |
+| --- | --- |
+| `backend/prd/global-foundation.md` | Global data/API foundation, module boundaries, and implementation dependency order. |
+| `backend/prd/global-data-model.md` | Logical model and suggested MySQL physical table design. |
+| `backend/prd/global-api-contracts.md` | REST API envelope, duration, pagination, errors, DTOs, file APIs, search APIs, and admin APIs. |
+| `backend/prd/global-auth-organization-permission.md` | Email login, reserved campus login, sessions, admin accounts, organizations, roles, authoring, and visibility. |
+
 ## Frontend Documents
 
 | Document | Purpose |
