@@ -36,6 +36,7 @@ record AuthSessionDto(
         String deviceLabel,
         Instant createdAt,
         Instant expiresAt,
+        Instant lastSeenAt,
         boolean current
 ) {
 }

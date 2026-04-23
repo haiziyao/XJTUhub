@@ -26,12 +26,20 @@ public class AuthService {
     private final TimeProvider timeProvider;
     private final AuthProperties authProperties;
     private final EmailSender emailSender;
+    private final EmailTokenVerifyAttemptStore emailTokenVerifyAttemptStore;
 
-    public AuthService(AuthStore authStore, TimeProvider timeProvider, AuthProperties authProperties, EmailSender emailSender) {
+    public AuthService(
+            AuthStore authStore,
+            TimeProvider timeProvider,
+            AuthProperties authProperties,
+            EmailSender emailSender,
+            EmailTokenVerifyAttemptStore emailTokenVerifyAttemptStore
+    ) {
         this.authStore = authStore;
         this.timeProvider = timeProvider;
         this.authProperties = authProperties;
         this.emailSender = emailSender;
+        this.emailTokenVerifyAttemptStore = emailTokenVerifyAttemptStore;
     }
 
     public EmailTokenCreateResponse createEmailToken(EmailTokenCreateRequest request, HttpServletRequest servletRequest) {
@@ -60,15 +68,19 @@ public class AuthService {
     public LoginResult createEmailSession(EmailSessionCreateRequest request, HttpServletRequest servletRequest) {
         Instant now = timeProvider.now();
         String email = normalizeEmail(request.email());
+        ensureTokenVerifyAllowed(email, request.purpose(), now);
         Optional<AuthStore.StoredEmailToken> token = authStore.findActiveEmailToken(email, request.purpose(), sha256(request.token()));
         if (token.isEmpty()) {
+            emailTokenVerifyAttemptStore.recordFailure(email, request.purpose(), now);
             authStore.recordLoginEvent(null, "email", "email_token_login", false, "token_invalid", clientIp(servletRequest), hashNullable(clientIp(servletRequest)), hashNullable(userAgent(servletRequest)), now);
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_EMAIL_TOKEN_INVALID", "Email token is invalid.");
         }
         if (token.get().consumedAt() != null) {
+            emailTokenVerifyAttemptStore.recordFailure(email, request.purpose(), now);
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_EMAIL_TOKEN_CONSUMED", "Email token has already been used.");
         }
         if (!token.get().expiresAt().isAfter(now)) {
+            emailTokenVerifyAttemptStore.recordFailure(email, request.purpose(), now);
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_EMAIL_TOKEN_EXPIRED", "Email token has expired.");
         }
 
@@ -76,6 +88,7 @@ public class AuthService {
                 .orElseGet(() -> authStore.createUserWithEmailIdentity(email, defaultNickname(email), now));
         authStore.consumeEmailToken(token.get().id(), now);
         authStore.markEmailIdentityVerified(user.id(), email, now);
+        emailTokenVerifyAttemptStore.clearFailures(email, request.purpose());
 
         String rawSessionToken = randomToken() + randomToken();
         Instant sessionExpiresAt = now.plus(Duration.ofDays(authProperties.getSession().getTtlDays()));
@@ -201,6 +214,7 @@ public class AuthService {
                 session.deviceLabel(),
                 session.createdAt(),
                 session.expiresAt(),
+                session.lastSeenAt(),
                 session.id() == currentSessionId
         );
     }
@@ -210,14 +224,38 @@ public class AuthService {
         if (token == null || token.isBlank()) {
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_REQUIRED", "Login required.");
         }
-        return authStore.findActiveSession(sha256(token), timeProvider.now())
+        Instant now = timeProvider.now();
+        AuthStore.StoredSession session = authStore.findActiveSession(sha256(token), now)
                 .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_REQUIRED", "Login required."));
+        authStore.touchSession(session.id(), now);
+        return authStore.findActiveSessionById(session.id(), now).orElse(
+                new AuthStore.StoredSession(
+                        session.id(),
+                        session.userId(),
+                        session.sessionTokenHash(),
+                        session.status(),
+                        session.loginProvider(),
+                        session.deviceLabel(),
+                        session.expiresAt(),
+                        now,
+                        session.createdAt(),
+                        now
+                )
+        );
     }
 
     private void ensureTokenCreateAllowed(String email, String purpose, Instant now) {
         Instant windowStart = now.minusSeconds(authProperties.getEmail().getTokenCreateWindowSeconds());
         int count = authStore.countEmailTokensCreatedSince(email, purpose, windowStart);
         if (count >= authProperties.getEmail().getTokenCreateLimit()) {
+            throw new BusinessException(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMITED", "Too many requests.");
+        }
+    }
+
+    private void ensureTokenVerifyAllowed(String email, String purpose, Instant now) {
+        Instant windowStart = now.minusSeconds(authProperties.getEmail().getTokenVerifyWindowSeconds());
+        int count = emailTokenVerifyAttemptStore.countRecentFailures(email, purpose, windowStart);
+        if (count >= authProperties.getEmail().getTokenVerifyLimit()) {
             throw new BusinessException(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMITED", "Too many requests.");
         }
     }

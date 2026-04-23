@@ -8,7 +8,7 @@
 /api/v1/auth
 ```
 
-全局响应包络、错误处理、ID 规则与分页规则继承自：
+全局响应包络、统一错误结构、请求 ID、耗时字段继承自：
 
 - `doc/backend/prd/global-api-contracts.md`
 - `doc/backend/prd/global-auth-organization-permission.md`
@@ -21,7 +21,7 @@ POST /api/v1/auth/email-tokens
 
 用途：
 
-- 为登录创建邮箱验证码。
+- 为邮箱登录创建一次性验证码。
 
 请求：
 
@@ -51,8 +51,8 @@ POST /api/v1/auth/email-tokens
 
 行为说明：
 
-- 当 `xjtuhub.auth.email.debug-return-token=true` 时，`delivery` 为 `debug_return`，同时 `token` 返回明文验证码。
-- 否则模块会调用 `EmailSender`，接口不返回明文验证码。
+- 当 `xjtuhub.auth.email.debug-return-token=true` 时，`delivery` 为 `debug_return`，并直接返回明文验证码。
+- 默认通过 `EmailSender` 发送验证码，接口不返回明文验证码。
 - 当前按 `email + purpose` 做创建限流。
 
 当前错误码：
@@ -68,7 +68,8 @@ POST /api/v1/auth/email-sessions
 
 用途：
 
-- 消费邮箱验证码并创建 HttpOnly 会话 Cookie。
+- 校验邮箱验证码。
+- 创建 HttpOnly 会话 Cookie。
 
 请求：
 
@@ -109,6 +110,7 @@ POST /api/v1/auth/email-sessions
     "deviceLabel": "Chrome on Windows",
     "createdAt": "2026-04-23T17:12:03.376Z",
     "expiresAt": "2026-05-23T17:12:03.376Z",
+    "lastSeenAt": "2026-04-23T17:12:03.376Z",
     "current": true
   }
 }
@@ -121,9 +123,16 @@ Cookie 行为：
 - Cookie 路径为 `/`。
 - Cookie 使用 `SameSite=Lax`。
 
+限流说明：
+
+- 当前对验证码校验失败次数做限流。
+- 限流键为 `email + purpose`。
+- 当前默认实现为应用内存存储，后续可以替换为 Redis 实现而不改接口。
+
 当前错误码：
 
 - `VALIDATION_FAILED`
+- `RATE_LIMITED`
 - `AUTH_EMAIL_TOKEN_INVALID`
 - `AUTH_EMAIL_TOKEN_EXPIRED`
 - `AUTH_EMAIL_TOKEN_CONSUMED`
@@ -149,6 +158,7 @@ GET /api/v1/auth/sessions
       "deviceLabel": "Chrome on Windows",
       "createdAt": "2026-04-23T17:12:03.376Z",
       "expiresAt": "2026-05-23T17:12:03.376Z",
+      "lastSeenAt": "2026-04-23T17:13:21.011Z",
       "current": true
     }
   ],
@@ -158,6 +168,10 @@ GET /api/v1/auth/sessions
   "hasNext": false
 }
 ```
+
+行为说明：
+
+- 当前会话在通过鉴权后会刷新 `lastSeenAt`。
 
 当前错误码：
 
@@ -193,7 +207,7 @@ DELETE /api/v1/auth/sessions/{sessionId}
 
 用途：
 
-- 注销当前用户名下的其他活跃会话。
+- 注销当前用户名下的指定活跃会话。
 
 规则：
 
@@ -258,9 +272,9 @@ GET /api/v1/auth/login-events
 
 ## 7. 当前实现说明
 
-- 当运行环境存在数据库与 MyBatis 会话工厂时，存储层使用 `MybatisAuthStore`。
-- 测试环境回退到 `InMemoryAuthStore`。
-- 邮件发送通过 `EmailSender` 抽象。
-- 默认发送实现为 `LoggingEmailSender`。
-- 当前限流通过数据库 / 内存存储统计最近时间窗口内的创建次数实现。
-- 数据访问层已切换为 MyBatis / MyBatis-Plus。
+- 运行环境存在数据库和 MyBatis 会话工厂时，持久层使用 `MybatisAuthStore`。
+- 测试环境默认回退到 `InMemoryAuthStore`。
+- 邮件发送通过 `EmailSender` 抽象，默认实现为 `LoggingEmailSender`。
+- 数据访问层已经切换到 MyBatis / MyBatis-Plus。
+- 会话最近活跃时间通过 `sessions.last_seen_at` 维护。
+- 验证码校验限流当前通过应用层存储实现，后续可以替换为 Redis。

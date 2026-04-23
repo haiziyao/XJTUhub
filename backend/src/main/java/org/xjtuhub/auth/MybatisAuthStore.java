@@ -208,6 +208,18 @@ class MybatisAuthStore implements AuthStore {
     }
 
     @Override
+    public void touchSession(long sessionId, Instant now) {
+        sessionMapper.update(
+                null,
+                new LambdaUpdateWrapper<SessionEntity>()
+                        .eq(SessionEntity::getId, sessionId)
+                        .eq(SessionEntity::getStatus, "active")
+                        .set(SessionEntity::getLastSeenAt, ts(now))
+                        .set(SessionEntity::getUpdatedAt, ts(now))
+        );
+    }
+
+    @Override
     public void revokeSession(long sessionId, Instant now) {
         sessionMapper.update(
                 null,
@@ -313,6 +325,7 @@ class MybatisAuthStore implements AuthStore {
                 entity.getLoginProvider(),
                 entity.getDeviceLabel(),
                 instant(entity.getExpiresAt()),
+                instant(entity.getLastSeenAt()),
                 instant(entity.getCreatedAt()),
                 instant(entity.getUpdatedAt())
         );

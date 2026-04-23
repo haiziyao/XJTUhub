@@ -27,6 +27,8 @@ interface AuthStore {
 
     List<StoredSession> findActiveSessionsByUserId(long userId, Instant now);
 
+    void touchSession(long sessionId, Instant now);
+
     void revokeSession(long sessionId, Instant now);
 
     int countEmailTokensCreatedSince(String email, String purpose, Instant since);
@@ -71,6 +73,7 @@ interface AuthStore {
             String loginProvider,
             String deviceLabel,
             Instant expiresAt,
+            Instant lastSeenAt,
             Instant createdAt,
             Instant updatedAt
     ) {

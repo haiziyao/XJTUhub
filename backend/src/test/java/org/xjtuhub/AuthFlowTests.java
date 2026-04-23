@@ -152,6 +152,27 @@ class AuthFlowTests {
     }
 
     @Test
+    void currentUserRequestRefreshesSessionLastSeenTime() throws Exception {
+        Cookie sessionCookie = loginAndGetSessionCookie("student-lastseen@example.com", "last-seen-device");
+
+        MvcResult beforeResult = mockMvc.perform(get("/api/v1/auth/sessions").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].lastSeenAt").exists())
+                .andReturn();
+        String beforeLastSeenAt = readJson(beforeResult).at("/data/items/0/lastSeenAt").asText();
+
+        Thread.sleep(5L);
+
+        mockMvc.perform(get("/api/v1/users/me").cookie(sessionCookie))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/auth/sessions").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].lastSeenAt", not(blankOrNullString())))
+                .andExpect(jsonPath("$.data.items[0].lastSeenAt").value(not(beforeLastSeenAt)));
+    }
+
+    @Test
     void updateCurrentUserProfileReturnsUpdatedUser() throws Exception {
         Cookie sessionCookie = loginAndGetSessionCookie(PROFILE_EMAIL, "profile-device");
 
@@ -175,6 +196,26 @@ class AuthFlowTests {
                 .andExpect(jsonPath("$.data.nickname").value("Profile User"))
                 .andExpect(jsonPath("$.data.bio").value("Updated profile bio"))
                 .andExpect(jsonPath("$.data.avatarUrl").value("https://example.com/avatar.png"));
+    }
+
+    @Test
+    void updateCurrentUserProfileRejectsTrimmedBlankNicknameAndInvalidAvatarUrl() throws Exception {
+        Cookie sessionCookie = loginAndGetSessionCookie("student-profile-invalid@example.com", "profile-invalid-device");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/users/me")
+                        .cookie(sessionCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "   ",
+                                  "bio": "ok",
+                                  "avatarUrl": "javascript:alert(1)"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.error.details.fields.nickname").exists())
+                .andExpect(jsonPath("$.error.details.fields.avatarUrl").exists());
     }
 
     @Test

@@ -28,6 +28,8 @@ xjtuhub:
       debug-return-token: ${AUTH_EMAIL_DEBUG_RETURN_TOKEN:false}
       token-create-limit: ${AUTH_EMAIL_TOKEN_CREATE_LIMIT:5}
       token-create-window-seconds: ${AUTH_EMAIL_TOKEN_CREATE_WINDOW_SECONDS:3600}
+      token-verify-limit: ${AUTH_EMAIL_TOKEN_VERIFY_LIMIT:10}
+      token-verify-window-seconds: ${AUTH_EMAIL_TOKEN_VERIFY_WINDOW_SECONDS:900}
     session:
       cookie-name: ${AUTH_SESSION_COOKIE_NAME:XJTUHUB_SESSION}
       ttl-days: ${AUTH_SESSION_TTL_DAYS:30}

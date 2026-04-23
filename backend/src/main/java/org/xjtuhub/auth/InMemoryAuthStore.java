@@ -104,7 +104,7 @@ class InMemoryAuthStore implements AuthStore {
 
     @Override
     public StoredSession saveSession(long userId, String tokenHash, String loginProvider, String deviceLabel, Instant expiresAt, Instant now) {
-        StoredSession session = new StoredSession(idGenerator.nextId(), userId, tokenHash, "active", loginProvider, deviceLabel, expiresAt, now, now);
+        StoredSession session = new StoredSession(idGenerator.nextId(), userId, tokenHash, "active", loginProvider, deviceLabel, expiresAt, now, now, now);
         sessions.put(session.id(), session);
         return session;
     }
@@ -138,6 +138,26 @@ class InMemoryAuthStore implements AuthStore {
     }
 
     @Override
+    public void touchSession(long sessionId, Instant now) {
+        StoredSession session = sessions.get(sessionId);
+        if (session == null) {
+            return;
+        }
+        sessions.put(sessionId, new StoredSession(
+                session.id(),
+                session.userId(),
+                session.sessionTokenHash(),
+                session.status(),
+                session.loginProvider(),
+                session.deviceLabel(),
+                session.expiresAt(),
+                now,
+                session.createdAt(),
+                now
+        ));
+    }
+
+    @Override
     public void revokeSession(long sessionId, Instant now) {
         StoredSession session = sessions.get(sessionId);
         if (session == null) {
@@ -151,6 +171,7 @@ class InMemoryAuthStore implements AuthStore {
                 session.loginProvider(),
                 session.deviceLabel(),
                 session.expiresAt(),
+                session.lastSeenAt(),
                 session.createdAt(),
                 now
         ));

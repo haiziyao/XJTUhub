@@ -20,6 +20,8 @@ public class AuthProperties {
         private boolean debugReturnToken = false;
         private int tokenCreateLimit = 5;
         private int tokenCreateWindowSeconds = 3600;
+        private int tokenVerifyLimit = 10;
+        private int tokenVerifyWindowSeconds = 900;
 
         public int getTokenTtlMinutes() {
             return tokenTtlMinutes;
@@ -51,6 +53,22 @@ public class AuthProperties {
 
         public void setTokenCreateWindowSeconds(int tokenCreateWindowSeconds) {
             this.tokenCreateWindowSeconds = tokenCreateWindowSeconds;
+        }
+
+        public int getTokenVerifyLimit() {
+            return tokenVerifyLimit;
+        }
+
+        public void setTokenVerifyLimit(int tokenVerifyLimit) {
+            this.tokenVerifyLimit = tokenVerifyLimit;
+        }
+
+        public int getTokenVerifyWindowSeconds() {
+            return tokenVerifyWindowSeconds;
+        }
+
+        public void setTokenVerifyWindowSeconds(int tokenVerifyWindowSeconds) {
+            this.tokenVerifyWindowSeconds = tokenVerifyWindowSeconds;
         }
     }
 
