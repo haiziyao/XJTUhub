@@ -10,6 +10,8 @@ The current backend skeleton includes:
 - Global API response envelope shape.
 - `requestId` and `durationMs` support.
 - Health endpoint at `GET /api/v1/health`.
+- Dependency health endpoint at `GET /api/v1/health/dependencies`.
+- Flyway migrations mirrored from `../database/mysql`.
 - Environment variable placeholders for MySQL, Redis, and MinIO.
 
 ## Run Tests
@@ -37,7 +39,24 @@ MINIO_ENDPOINT
 MINIO_ACCESS_KEY
 MINIO_SECRET_KEY
 MINIO_BUCKET_NAME
+FLYWAY_ENABLED
 ```
+
+## Database Migration
+
+Flyway is disabled by default to avoid accidental schema writes in ad-hoc local runs.
+
+Set `FLYWAY_ENABLED=true` when the configured MySQL database should be migrated on application startup. Migration files live in `src/main/resources/db/migration` and must stay compatible with the authoritative bootstrap SQL in `../database/mysql`.
+
+## Dependency Health
+
+`GET /api/v1/health/dependencies` checks configured infrastructure:
+
+- MySQL: `SELECT 1`
+- Redis: `PING`
+- MinIO: configured bucket existence
+
+If a dependency client is not configured in the current runtime, its status is `skipped`.
 
 ## Contract Source
 

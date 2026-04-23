@@ -29,4 +29,16 @@ class BackendApplicationTests {
                 .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
                 .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
     }
+
+    @Test
+    void dependencyHealthReportsSkippedWhenExternalClientsAreNotConfigured() throws Exception {
+        mockMvc.perform(get("/api/v1/health/dependencies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.mysql.status").value("skipped"))
+                .andExpect(jsonPath("$.data.redis.status").value("skipped"))
+                .andExpect(jsonPath("$.data.minio.status").value("skipped"))
+                .andExpect(jsonPath("$.error").doesNotExist())
+                .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
+                .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
+    }
 }
