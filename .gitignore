@@ -2,3 +2,5 @@
 .superpowers/
 .env*
 !.env.example
+target/
+**/target/
