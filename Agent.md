@@ -21,6 +21,8 @@ Read only the documents relevant to the current task, but always start here.
 
 ## Hard Rules
 
+- AI agents must use `doc/` as the authoritative documentation source. `doc-zh/` is a human-readable Chinese mirror and must not be used as the execution source.
+- If `doc/` and `doc-zh/` disagree, follow `doc/` and update `doc-zh/` later.
 - Do not implement frontend pages before a backend PRD or page spec exists.
 - Keep frontend and backend documents separate. Cross-reference them, but do not merge their responsibilities.
 - Backend docs define business capability, data, API, permissions, moderation, storage, and search.

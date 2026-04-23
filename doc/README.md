@@ -2,6 +2,12 @@
 
 XJTUhub uses documentation-first development. This map explains where each kind of decision belongs.
 
+## Authority
+
+`doc/` is the authoritative documentation source for AI agents, implementation work, and reviews.
+
+`doc-zh/` is a Chinese mirror for human reading only. If the two directories disagree, follow `doc/` and update `doc-zh/` later.
+
 ## Reading Order
 
 1. Start with `../Agent.md` for agent and contributor rules.

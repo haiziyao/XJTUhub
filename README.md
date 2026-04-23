@@ -22,6 +22,7 @@ Phase 1 的产品优先级：
 - 后端架构：`doc/backend/backend-architecture.md`
 - 前端工作流：`doc/frontend/frontend-workflow.md`
 - 共享开发流程：`doc/shared/dev-workflow.md`
+- 中文镜像文档：`doc-zh/`，仅供人工阅读；AI agent 和实现工作必须以 `doc/` 为准。
 
 ## 前缘
 * 大学的资源纷繁复杂，XJTU应该值得一个大型的资源站点，但是目前并没有相应的"产品"。
