@@ -1,29 +1,29 @@
-# Auth Module API
+# Auth 模块接口文档
 
-This document describes the currently implemented `auth` module APIs.
+本文档描述当前已经实现的 `auth` 模块接口。
 
-Base path:
+基础路径：
 
 ```text
 /api/v1/auth
 ```
 
-Global response envelope, error handling, ID rules, and pagination rules inherit:
+全局响应包络、错误处理、ID 规则与分页规则继承自：
 
 - `doc/backend/prd/global-api-contracts.md`
 - `doc/backend/prd/global-auth-organization-permission.md`
 
-## 1. Create Email Token
+## 1. 创建邮箱验证码
 
 ```text
 POST /api/v1/auth/email-tokens
 ```
 
-Purpose:
+用途：
 
-- Create an email verification token for login.
+- 为登录创建邮箱验证码。
 
-Request:
+请求：
 
 ```json
 {
@@ -32,12 +32,12 @@ Request:
 }
 ```
 
-Current validation:
+当前校验：
 
-- `email` must be a valid email address.
-- `purpose` must be non-empty.
+- `email` 必须是合法邮箱地址。
+- `purpose` 不能为空。
 
-Success response `data`:
+成功响应 `data`：
 
 ```json
 {
@@ -49,28 +49,28 @@ Success response `data`:
 }
 ```
 
-Behavior notes:
+行为说明：
 
-- If `xjtuhub.auth.email.debug-return-token=true`, `delivery` becomes `debug_return` and `token` contains the raw token.
-- Otherwise the module calls `EmailSender` and does not return the raw token.
-- Creation is rate-limited per `email + purpose`.
+- 当 `xjtuhub.auth.email.debug-return-token=true` 时，`delivery` 为 `debug_return`，同时 `token` 返回明文验证码。
+- 否则模块会调用 `EmailSender`，接口不返回明文验证码。
+- 当前按 `email + purpose` 做创建限流。
 
-Current errors:
+当前错误码：
 
 - `VALIDATION_FAILED`
 - `RATE_LIMITED`
 
-## 2. Create Email Session
+## 2. 创建邮箱登录会话
 
 ```text
 POST /api/v1/auth/email-sessions
 ```
 
-Purpose:
+用途：
 
-- Consume an email token and create an HttpOnly session cookie.
+- 消费邮箱验证码并创建 HttpOnly 会话 Cookie。
 
-Request:
+请求：
 
 ```json
 {
@@ -81,7 +81,7 @@ Request:
 }
 ```
 
-Success response `data`:
+成功响应 `data`：
 
 ```json
 {
@@ -114,31 +114,31 @@ Success response `data`:
 }
 ```
 
-Cookie behavior:
+Cookie 行为：
 
-- Sets `XJTUHUB_SESSION`.
-- Cookie is `HttpOnly`.
-- Cookie path is `/`.
-- Cookie uses `SameSite=Lax`.
+- 设置 `XJTUHUB_SESSION`。
+- Cookie 为 `HttpOnly`。
+- Cookie 路径为 `/`。
+- Cookie 使用 `SameSite=Lax`。
 
-Current errors:
+当前错误码：
 
 - `VALIDATION_FAILED`
 - `AUTH_EMAIL_TOKEN_INVALID`
 - `AUTH_EMAIL_TOKEN_EXPIRED`
 - `AUTH_EMAIL_TOKEN_CONSUMED`
 
-## 3. List Sessions
+## 3. 获取当前用户会话列表
 
 ```text
 GET /api/v1/auth/sessions
 ```
 
-Purpose:
+用途：
 
-- Return active sessions for the current user.
+- 返回当前用户的活跃会话列表。
 
-Success response `data`:
+成功响应 `data`：
 
 ```json
 {
@@ -159,21 +159,21 @@ Success response `data`:
 }
 ```
 
-Current errors:
+当前错误码：
 
 - `AUTH_LOGIN_REQUIRED`
 
-## 4. Revoke Current Session
+## 4. 注销当前会话
 
 ```text
 DELETE /api/v1/auth/sessions/current
 ```
 
-Purpose:
+用途：
 
-- Revoke the current session and clear the session cookie.
+- 注销当前会话并清除当前会话 Cookie。
 
-Success response `data`:
+成功响应 `data`：
 
 ```json
 {
@@ -181,26 +181,26 @@ Success response `data`:
 }
 ```
 
-Current errors:
+当前错误码：
 
 - `AUTH_LOGIN_REQUIRED`
 
-## 5. Revoke Session By ID
+## 5. 按会话 ID 注销会话
 
 ```text
 DELETE /api/v1/auth/sessions/{sessionId}
 ```
 
-Purpose:
+用途：
 
-- Revoke another active session owned by the current user.
+- 注销当前用户名下的其他活跃会话。
 
-Rules:
+规则：
 
-- `sessionId` must be a numeric string.
-- The target session must belong to the current user.
+- `sessionId` 必须是数字字符串。
+- 目标会话必须属于当前用户。
 
-Success response `data`:
+成功响应 `data`：
 
 ```json
 {
@@ -208,24 +208,24 @@ Success response `data`:
 }
 ```
 
-Current errors:
+当前错误码：
 
 - `VALIDATION_FAILED`
 - `AUTH_LOGIN_REQUIRED`
 - `AUTH_FORBIDDEN`
 - `AUTH_SESSION_EXPIRED`
 
-## 6. List Login Events
+## 6. 获取登录历史
 
 ```text
 GET /api/v1/auth/login-events
 ```
 
-Purpose:
+用途：
 
-- Return a safe login history view for the current user.
+- 返回当前用户的安全版登录历史视图。
 
-Success response `data`:
+成功响应 `data`：
 
 ```json
 {
@@ -246,20 +246,20 @@ Success response `data`:
 }
 ```
 
-Security notes:
+安全说明：
 
-- Ordinary API does not expose `ipAddress`.
-- Ordinary API does not expose `ipHash`.
-- Ordinary API does not expose `userAgentHash`.
+- 普通接口不暴露 `ipAddress`。
+- 普通接口不暴露 `ipHash`。
+- 普通接口不暴露 `userAgentHash`。
 
-Current errors:
+当前错误码：
 
 - `AUTH_LOGIN_REQUIRED`
 
-## 7. Current Implementation Notes
+## 7. 当前实现说明
 
-- Storage uses `JdbcAuthStore` when `JdbcTemplate` is available.
-- Tests use `InMemoryAuthStore` fallback.
-- Email delivery is abstracted behind `EmailSender`.
-- Default sender is `LoggingEmailSender`.
-- Rate limit is currently implemented with database/in-memory counting over a recent time window.
+- 当运行环境存在 `JdbcTemplate` 时，存储层使用 `JdbcAuthStore`。
+- 测试环境回退到 `InMemoryAuthStore`。
+- 邮件发送通过 `EmailSender` 抽象。
+- 默认发送实现为 `LoggingEmailSender`。
+- 当前限流通过数据库 / 内存存储统计最近时间窗口内的创建次数实现。

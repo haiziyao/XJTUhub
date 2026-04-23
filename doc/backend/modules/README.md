@@ -1,15 +1,16 @@
-# Backend Module API Docs
+# 后端模块接口文档
 
-This directory stores implementation-facing API documentation grouped by backend module.
+此目录用于存放按后端模块拆分的接口文档，面向实现与联调用途。
 
-Rules:
+规则：
 
-- One module, one folder.
-- Every implemented backend feature must update the matching module API doc in the same change.
-- These docs describe actual implemented routes, request/response DTO shape, behavior notes, and current limitations.
-- Global rules still belong to `doc/backend/prd/` and `doc/backend/api-contracts.md`.
+- 一个模块一个文件夹。
+- 每实现一个后端功能，必须在同一次变更中更新对应模块接口文档。
+- 这些文档描述当前已经实现的路由、请求/响应 DTO 结构、行为说明与当前限制。
+- 全局规则仍以 `doc/backend/prd/` 和 `doc/backend/api-contracts.md` 为准。
+- 模块接口文档默认使用中文。
 
-Current modules with API docs:
+当前已有接口文档的模块：
 
 - `auth/`
 - `user/`

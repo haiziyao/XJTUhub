@@ -1,43 +1,44 @@
-# Development Workflow
+# 开发流程
 
-XJTUhub uses documentation-first development.
+XJTUhub 采用文档优先的开发方式。
 
-## General Flow
+## 总体流程
 
-1. Define or update product constraints when needed.
-2. Write backend PRD for a capability.
-3. Write or update API and data contracts.
-4. Derive frontend page specs.
-5. Generate visual prompts and reference images when needed.
-6. Implement backend and frontend against the approved docs.
-7. For every implemented backend feature, write or update the module API document in `doc/backend/modules/<module>/`.
-8. Add tests.
-9. Update `TODO.md` and decision docs.
+1. 在需要时定义或更新产品约束。
+2. 为某项能力编写后端 PRD。
+3. 编写或更新 API 与数据契约。
+4. 推导前端页面规格。
+5. 在需要时生成视觉提示词和参考图。
+6. 按已批准文档实现后端与前端。
+7. 每实现一个后端功能，都必须同步编写或更新对应模块的接口文档，位置为 `doc/backend/modules/<module>/`。
+8. 补充测试。
+9. 更新 `TODO.md` 与决策文档。
 
-## Frontend And Backend Separation
+## 前后端分离
 
-- Backend docs live under `doc/backend`.
-- Module API docs live under `doc/backend/modules/<module>`.
-- Frontend docs live under `doc/frontend`.
-- Shared terms and process docs live under `doc/shared`.
-- Cross-references are allowed.
-- Mixed documents that blur business rules and visual implementation should be split.
-- API documentation must be split by module. Do not keep growing one global implementation note for all modules.
+- 后端文档位于 `doc/backend`。
+- 模块接口文档位于 `doc/backend/modules/<module>`。
+- 前端文档位于 `doc/frontend`。
+- 共享术语与流程文档位于 `doc/shared`。
+- 允许交叉引用。
+- 混合业务规则与视觉实现的文档必须拆分。
+- 接口文档必须按模块拆分，不能持续堆到一个全局实现说明里。
+- 模块接口文档默认使用中文。
 
-## Changing Rules
+## 规则变更
 
-When changing a constraint:
+当某项约束发生变化时：
 
-1. Update the owning document.
-2. Add a decision log entry if the change affects architecture, workflow, security, or product scope.
-3. Update impacted docs.
-4. Mention the change in implementation notes or PR description.
+1. 更新所属文档。
+2. 如果变更影响架构、流程、安全或产品范围，则补充决策记录。
+3. 更新受影响文档。
+4. 在实现说明或 PR 描述中说明变化。
 
-## Branch And Commit Guidance
+## 分支与提交建议
 
-Use focused commits when possible.
+尽量保持提交聚焦。
 
-Suggested commit prefixes:
+建议的 commit 前缀：
 
 - `docs:`
 - `feat:`
@@ -46,12 +47,12 @@ Suggested commit prefixes:
 - `refactor:`
 - `chore:`
 
-## Review Guidance
+## 评审检查点
 
-Reviewers should check:
+评审时应重点检查：
 
-- Does the change follow the relevant PRD/spec?
-- Are frontend and backend responsibilities separated?
-- Are permissions enforced on the backend?
-- Are provider SDKs isolated behind adapters?
-- Are tests included for high-risk behavior?
+- 变更是否遵循相关 PRD / 规格？
+- 前后端职责是否清晰分离？
+- 权限是否由后端强制执行？
+- 第三方 provider SDK 是否隔离在 adapter 后面？
+- 高风险行为是否附带测试？

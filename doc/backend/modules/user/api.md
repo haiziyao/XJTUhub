@@ -1,29 +1,29 @@
-# User Module API
+# User 模块接口文档
 
-This document describes the currently implemented `user` module APIs.
+本文档描述当前已经实现的 `user` 模块接口。
 
-Base path:
+基础路径：
 
 ```text
 /api/v1/users
 ```
 
-Global response envelope, error handling, and DTO constraints inherit:
+全局响应包络、错误处理与 DTO 约束继承自：
 
 - `doc/backend/prd/global-api-contracts.md`
 - `doc/backend/prd/global-auth-organization-permission.md`
 
-## 1. Get Current User
+## 1. 获取当前用户
 
 ```text
 GET /api/v1/users/me
 ```
 
-Purpose:
+用途：
 
-- Return the current authenticated user's profile summary for ordinary client use.
+- 返回当前已登录用户的基础资料摘要，供普通客户端使用。
 
-Success response `data`:
+成功响应 `data`：
 
 ```json
 {
@@ -46,27 +46,27 @@ Success response `data`:
 }
 ```
 
-Behavior notes:
+行为说明：
 
-- `nameColor` becomes `red` when the user has active premium membership.
-- `displayBadges` is backend-computed.
+- 当用户存在有效大会员时，`nameColor` 为 `red`。
+- `displayBadges` 由后端计算。
 
-Current errors:
+当前错误码：
 
 - `AUTH_LOGIN_REQUIRED`
 - `USER_NOT_FOUND`
 
-## 2. Update Current User
+## 2. 更新当前用户资料
 
 ```text
 PATCH /api/v1/users/me
 ```
 
-Purpose:
+用途：
 
-- Update the current user's editable profile fields.
+- 更新当前用户可编辑的资料字段。
 
-Request:
+请求：
 
 ```json
 {
@@ -76,25 +76,25 @@ Request:
 }
 ```
 
-Current validation:
+当前校验：
 
-- `nickname` is required.
-- `nickname` max length is `64`.
-- `bio` max length is `512`.
-- `avatarUrl` max length is `512`.
+- `nickname` 必填。
+- `nickname` 最大长度为 `64`。
+- `bio` 最大长度为 `512`。
+- `avatarUrl` 最大长度为 `512`。
 
-Success response:
+成功响应：
 
-- Returns the same DTO shape as `GET /api/v1/users/me`.
+- 返回与 `GET /api/v1/users/me` 相同的 DTO 结构。
 
-Current errors:
+当前错误码：
 
 - `VALIDATION_FAILED`
 - `AUTH_LOGIN_REQUIRED`
 - `USER_NOT_FOUND`
 
-## 3. Current Implementation Notes
+## 3. 当前实现说明
 
-- Profile updates currently write directly to `users.nickname`, `users.bio`, and `users.avatar_url`.
-- No separate avatar upload workflow exists yet; `avatarUrl` is currently a raw URL field.
-- Further user profile capabilities should be documented in this file as they are implemented.
+- 资料更新当前直接写入 `users.nickname`、`users.bio`、`users.avatar_url`。
+- 目前还没有独立头像上传流程，`avatarUrl` 暂时只是普通 URL 字段。
+- 后续 user 模块新增能力时，继续在本文件追加文档。
