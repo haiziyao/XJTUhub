@@ -8,6 +8,8 @@ The current backend skeleton includes:
 
 - Spring Boot application entrypoint.
 - Global API response envelope shape.
+- Global exception handling for validation, business, and unexpected errors.
+- Shared offset/cursor pagination DTOs.
 - `requestId` and `durationMs` support.
 - Health endpoint at `GET /api/v1/health`.
 - Dependency health endpoint at `GET /api/v1/health/dependencies`.

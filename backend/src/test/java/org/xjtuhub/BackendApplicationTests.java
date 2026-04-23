@@ -41,4 +41,38 @@ class BackendApplicationTests {
                 .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
                 .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
     }
+
+    @Test
+    void validationFailureUsesGlobalErrorEnvelope() throws Exception {
+        mockMvc.perform(get("/api/v1/test/failures/validation"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.data").doesNotExist())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.error.message").value("Validation failed."))
+                .andExpect(jsonPath("$.error.details.fields.pageSize").exists())
+                .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
+                .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
+    }
+
+    @Test
+    void businessFailureUsesGlobalErrorEnvelope() throws Exception {
+        mockMvc.perform(get("/api/v1/test/failures/business"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.data").doesNotExist())
+                .andExpect(jsonPath("$.error.code").value("CONTENT_NOT_FOUND"))
+                .andExpect(jsonPath("$.error.message").value("Content not found."))
+                .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
+                .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
+    }
+
+    @Test
+    void invalidSnowflakeIdUsesValidationEnvelope() throws Exception {
+        mockMvc.perform(get("/api/v1/test/ids/not-a-number"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.data").doesNotExist())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.error.details.fields.contentId").value("contentId must be a numeric string."))
+                .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
+                .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
+    }
 }
