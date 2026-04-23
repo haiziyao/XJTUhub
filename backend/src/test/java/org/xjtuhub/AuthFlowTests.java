@@ -29,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthFlowTests {
     private static final String PRIMARY_EMAIL = "student@example.com";
     private static final String REVOKE_EMAIL = "student-revoke@example.com";
+    private static final String PROFILE_EMAIL = "student-profile@example.com";
+    private static final String EVENTS_EMAIL = "student-events@example.com";
 
     @Autowired
     private MockMvc mockMvc;
@@ -147,6 +149,58 @@ class AuthFlowTests {
         mockMvc.perform(get("/api/v1/users/me").cookie(firstSession))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("AUTH_LOGIN_REQUIRED"));
+    }
+
+    @Test
+    void updateCurrentUserProfileReturnsUpdatedUser() throws Exception {
+        Cookie sessionCookie = loginAndGetSessionCookie(PROFILE_EMAIL, "profile-device");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/users/me")
+                        .cookie(sessionCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "Profile User",
+                                  "bio": "Updated profile bio",
+                                  "avatarUrl": "https://example.com/avatar.png"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nickname").value("Profile User"))
+                .andExpect(jsonPath("$.data.bio").value("Updated profile bio"))
+                .andExpect(jsonPath("$.data.avatarUrl").value("https://example.com/avatar.png"));
+
+        mockMvc.perform(get("/api/v1/users/me").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nickname").value("Profile User"))
+                .andExpect(jsonPath("$.data.bio").value("Updated profile bio"))
+                .andExpect(jsonPath("$.data.avatarUrl").value("https://example.com/avatar.png"));
+    }
+
+    @Test
+    void loginEventsEndpointReturnsSafeHistory() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email-sessions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "%s",
+                                  "purpose": "login",
+                                  "token": "bad-token"
+                                }
+                                """.formatted(EVENTS_EMAIL)))
+                .andExpect(status().isUnauthorized());
+
+        Cookie sessionCookie = loginAndGetSessionCookie(EVENTS_EMAIL, "events-device");
+
+        mockMvc.perform(get("/api/v1/auth/login-events").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].provider").value("email"))
+                .andExpect(jsonPath("$.data.items[0].eventType").value("email_token_login"))
+                .andExpect(jsonPath("$.data.items[0].success").value(true))
+                .andExpect(jsonPath("$.data.items[1].success").value(false))
+                .andExpect(jsonPath("$.data.items[1].failureReason").value("token_invalid"))
+                .andExpect(jsonPath("$.data.items[0].ipAddress").doesNotExist())
+                .andExpect(jsonPath("$.data.items.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
     }
 
     private JsonNode readJson(MvcResult result) throws Exception {

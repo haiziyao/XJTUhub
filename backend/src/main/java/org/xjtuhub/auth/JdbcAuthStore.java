@@ -252,6 +252,34 @@ class JdbcAuthStore implements AuthStore {
     }
 
     @Override
+    public void updateUserProfile(long userId, String nickname, String bio, String avatarUrl, Instant now) {
+        jdbcTemplate.update("""
+                UPDATE users
+                SET nickname = ?, bio = ?, avatar_url = ?, updated_at = ?
+                WHERE id = ?
+                """, nickname, bio, avatarUrl, ts(now), userId);
+    }
+
+    @Override
+    public List<StoredLoginEvent> findLoginEventsByUserId(long userId, int limit) {
+        return jdbcTemplate.query("""
+                SELECT id, user_id, provider, event_type, success, failure_reason, created_at
+                FROM user_login_events
+                WHERE user_id = ? OR user_id IS NULL
+                ORDER BY created_at DESC
+                LIMIT ?
+                """, (rs, rowNum) -> new StoredLoginEvent(
+                rs.getLong("id"),
+                rs.getObject("user_id") == null ? null : rs.getLong("user_id"),
+                rs.getString("provider"),
+                rs.getString("event_type"),
+                rs.getBoolean("success"),
+                rs.getString("failure_reason"),
+                rs.getTimestamp("created_at").toInstant()
+        ), userId, limit);
+    }
+
+    @Override
     public void recordLoginEvent(Long userId, String provider, String eventType, boolean success, String failureReason, String ipAddress, String ipHash, String userAgentHash, Instant now) {
         jdbcTemplate.update("""
                 INSERT INTO user_login_events (

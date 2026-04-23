@@ -126,6 +126,30 @@ public class AuthService {
         return new SessionRevokeResponse(true);
     }
 
+    public OffsetPageResponse<LoginEventDto> listLoginEvents(HttpServletRequest request) {
+        AuthStore.StoredSession session = requireSession(request);
+        List<LoginEventDto> items = authStore.findLoginEventsByUserId(session.userId(), 20).stream()
+                .map(event -> new LoginEventDto(
+                        String.valueOf(event.id()),
+                        event.provider(),
+                        event.eventType(),
+                        event.success(),
+                        event.failureReason(),
+                        event.createdAt()
+                ))
+                .toList();
+        return new OffsetPageResponse<>(items, 1, items.size(), items.size(), false);
+    }
+
+    public CurrentUserDto updateCurrentUserProfile(HttpServletRequest request, String nickname, String bio, String avatarUrl) {
+        AuthStore.StoredSession session = requireSession(request);
+        String normalizedNickname = nickname.trim();
+        String normalizedBio = bio == null || bio.isBlank() ? null : bio.trim();
+        String normalizedAvatarUrl = avatarUrl == null || avatarUrl.isBlank() ? null : avatarUrl.trim();
+        authStore.updateUserProfile(session.userId(), normalizedNickname, normalizedBio, normalizedAvatarUrl, timeProvider.now());
+        return currentUserFor(session.userId());
+    }
+
     public String clearSessionCookie() {
         return ResponseCookie.from(authProperties.getSession().getCookieName(), "")
                 .httpOnly(true)

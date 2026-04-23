@@ -22,6 +22,7 @@ class InMemoryAuthStore implements AuthStore {
     private final Map<String, Long> userIdByEmail = new ConcurrentHashMap<>();
     private final Map<Long, StoredSession> sessions = new ConcurrentHashMap<>();
     private final Map<Long, MembershipRecord> memberships = new ConcurrentHashMap<>();
+    private final Map<Long, StoredLoginEvent> loginEvents = new ConcurrentHashMap<>();
 
     InMemoryAuthStore(IdGenerator idGenerator) {
         this.idGenerator = idGenerator;
@@ -165,8 +166,36 @@ class InMemoryAuthStore implements AuthStore {
     }
 
     @Override
+    public void updateUserProfile(long userId, String nickname, String bio, String avatarUrl, Instant now) {
+        StoredUser user = users.get(userId);
+        if (user == null) {
+            return;
+        }
+        users.put(userId, new StoredUser(
+                user.id(),
+                nickname,
+                avatarUrl,
+                bio,
+                user.accountStatus(),
+                user.authLevel(),
+                user.primaryIdentityProvider(),
+                user.lastLoginProvider()
+        ));
+    }
+
+    @Override
+    public List<StoredLoginEvent> findLoginEventsByUserId(long userId, int limit) {
+        return loginEvents.values().stream()
+                .filter(event -> event.userId() == null || event.userId() == userId)
+                .sorted(Comparator.comparing(StoredLoginEvent::createdAt).reversed())
+                .limit(limit)
+                .toList();
+    }
+
+    @Override
     public void recordLoginEvent(Long userId, String provider, String eventType, boolean success, String failureReason, String ipAddress, String ipHash, String userAgentHash, Instant now) {
-        // Intentionally kept as an in-memory no-op for tests.
+        long id = idGenerator.nextId();
+        loginEvents.put(id, new StoredLoginEvent(id, userId, provider, eventType, success, failureReason, now));
     }
 
     @Override

@@ -31,6 +31,10 @@ interface AuthStore {
 
     int countEmailTokensCreatedSince(String email, String purpose, Instant since);
 
+    void updateUserProfile(long userId, String nickname, String bio, String avatarUrl, Instant now);
+
+    List<StoredLoginEvent> findLoginEventsByUserId(long userId, int limit);
+
     void recordLoginEvent(Long userId, String provider, String eventType, boolean success, String failureReason, String ipAddress, String ipHash, String userAgentHash, Instant now);
 
     boolean hasActivePremiumMembership(long userId, Instant now);
@@ -69,6 +73,17 @@ interface AuthStore {
             Instant expiresAt,
             Instant createdAt,
             Instant updatedAt
+    ) {
+    }
+
+    record StoredLoginEvent(
+            long id,
+            Long userId,
+            String provider,
+            String eventType,
+            boolean success,
+            String failureReason,
+            Instant createdAt
     ) {
     }
 }

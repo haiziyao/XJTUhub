@@ -58,6 +58,15 @@ public class AuthController {
         );
     }
 
+    @GetMapping("/login-events")
+    public ApiResponse<OffsetPageResponse<LoginEventDto>> loginEvents(HttpServletRequest servletRequest) {
+        return ApiResponse.ok(
+                authService.listLoginEvents(servletRequest),
+                RequestContext.requestId(servletRequest),
+                RequestContext.durationMs(servletRequest)
+        );
+    }
+
     @DeleteMapping("/sessions/{sessionId}")
     public ApiResponse<SessionRevokeResponse> revokeSessionById(
             @PathVariable String sessionId,

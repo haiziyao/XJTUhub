@@ -6,9 +6,11 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.xjtuhub.common.web.RequestContext;
 
 import java.util.LinkedHashMap;
@@ -58,6 +60,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.fail(
                         new ApiError("INTERNAL_ERROR", "Internal error.", Map.of()),
+                        RequestContext.requestId(request),
+                        RequestContext.durationMs(request)
+                ));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResource(NoResourceFoundException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.fail(
+                        new ApiError("NOT_FOUND", "Not found.", Map.of()),
+                        RequestContext.requestId(request),
+                        RequestContext.durationMs(request)
+                ));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.fail(
+                        new ApiError("METHOD_NOT_ALLOWED", "Method not allowed.", Map.of()),
                         RequestContext.requestId(request),
                         RequestContext.durationMs(request)
                 ));
