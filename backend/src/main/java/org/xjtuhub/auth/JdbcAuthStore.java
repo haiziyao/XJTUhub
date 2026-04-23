@@ -186,6 +186,29 @@ class JdbcAuthStore implements AuthStore {
     }
 
     @Override
+    public Optional<StoredSession> findActiveSessionById(long sessionId, Instant now) {
+        List<StoredSession> results = jdbcTemplate.query("""
+                SELECT id, user_id, session_token_hash, status, login_provider, device_label, expires_at, created_at, updated_at
+                FROM sessions
+                WHERE id = ?
+                  AND status = 'active'
+                  AND expires_at > ?
+                LIMIT 1
+                """, (rs, rowNum) -> new StoredSession(
+                rs.getLong("id"),
+                rs.getLong("user_id"),
+                rs.getString("session_token_hash"),
+                rs.getString("status"),
+                rs.getString("login_provider"),
+                rs.getString("device_label"),
+                rs.getTimestamp("expires_at").toInstant(),
+                rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("updated_at").toInstant()
+        ), sessionId, ts(now));
+        return results.stream().findFirst();
+    }
+
+    @Override
     public List<StoredSession> findActiveSessionsByUserId(long userId, Instant now) {
         return jdbcTemplate.query("""
                 SELECT id, user_id, session_token_hash, status, login_provider, device_label, expires_at, created_at, updated_at
@@ -214,6 +237,18 @@ class JdbcAuthStore implements AuthStore {
                 SET status = 'revoked', updated_at = ?
                 WHERE id = ?
                 """, ts(now), sessionId);
+    }
+
+    @Override
+    public int countEmailTokensCreatedSince(String email, String purpose, Instant since) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(1)
+                FROM email_verification_tokens
+                WHERE email = ?
+                  AND purpose = ?
+                  AND created_at >= ?
+                """, Integer.class, email, purpose, ts(since));
+        return count == null ? 0 : count;
     }
 
     @Override

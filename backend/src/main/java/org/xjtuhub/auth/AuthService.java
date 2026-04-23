@@ -25,19 +25,29 @@ public class AuthService {
     private final AuthStore authStore;
     private final TimeProvider timeProvider;
     private final AuthProperties authProperties;
+    private final EmailSender emailSender;
 
-    public AuthService(AuthStore authStore, TimeProvider timeProvider, AuthProperties authProperties) {
+    public AuthService(AuthStore authStore, TimeProvider timeProvider, AuthProperties authProperties, EmailSender emailSender) {
         this.authStore = authStore;
         this.timeProvider = timeProvider;
         this.authProperties = authProperties;
+        this.emailSender = emailSender;
     }
 
     public EmailTokenCreateResponse createEmailToken(EmailTokenCreateRequest request, HttpServletRequest servletRequest) {
         Instant now = timeProvider.now();
         String email = normalizeEmail(request.email());
+        ensureTokenCreateAllowed(email, request.purpose(), now);
         String rawToken = randomToken();
         Instant expiresAt = now.plus(Duration.ofMinutes(authProperties.getEmail().getTokenTtlMinutes()));
         authStore.saveEmailToken(email, request.purpose(), sha256(rawToken), expiresAt, now);
+        if (!authProperties.getEmail().isDebugReturnToken()) {
+            emailSender.send(new EmailSender.EmailMessage(
+                    email,
+                    "XJTUhub login token",
+                    "Your verification token is: " + rawToken
+            ));
+        }
         return new EmailTokenCreateResponse(
                 email,
                 request.purpose(),
@@ -104,6 +114,18 @@ public class AuthService {
         return new SessionRevokeResponse(true);
     }
 
+    public SessionRevokeResponse revokeSessionById(HttpServletRequest request, String sessionId) {
+        AuthStore.StoredSession currentSession = requireSession(request);
+        long targetSessionId = parseSessionId(sessionId);
+        AuthStore.StoredSession targetSession = authStore.findActiveSessionById(targetSessionId, timeProvider.now())
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "AUTH_SESSION_EXPIRED", "Session not found."));
+        if (targetSession.userId() != currentSession.userId()) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "AUTH_FORBIDDEN", "Forbidden.");
+        }
+        authStore.revokeSession(targetSession.id(), timeProvider.now());
+        return new SessionRevokeResponse(true);
+    }
+
     public String clearSessionCookie() {
         return ResponseCookie.from(authProperties.getSession().getCookieName(), "")
                 .httpOnly(true)
@@ -166,6 +188,23 @@ public class AuthService {
         }
         return authStore.findActiveSession(sha256(token), timeProvider.now())
                 .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_REQUIRED", "Login required."));
+    }
+
+    private void ensureTokenCreateAllowed(String email, String purpose, Instant now) {
+        Instant windowStart = now.minusSeconds(authProperties.getEmail().getTokenCreateWindowSeconds());
+        int count = authStore.countEmailTokensCreatedSince(email, purpose, windowStart);
+        if (count >= authProperties.getEmail().getTokenCreateLimit()) {
+            throw new BusinessException(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMITED", "Too many requests.");
+        }
+    }
+
+    private long parseSessionId(String sessionId) {
+        try {
+            return Long.parseLong(sessionId);
+        } catch (NumberFormatException ex) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "Validation failed.",
+                    java.util.Map.of("fields", java.util.Map.of("sessionId", "sessionId must be a numeric string.")));
+        }
     }
 
     private String readCookie(HttpServletRequest request, String name) {

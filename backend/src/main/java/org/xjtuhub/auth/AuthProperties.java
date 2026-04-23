@@ -18,6 +18,8 @@ public class AuthProperties {
     public static class Email {
         private int tokenTtlMinutes = 10;
         private boolean debugReturnToken = false;
+        private int tokenCreateLimit = 5;
+        private int tokenCreateWindowSeconds = 3600;
 
         public int getTokenTtlMinutes() {
             return tokenTtlMinutes;
@@ -33,6 +35,22 @@ public class AuthProperties {
 
         public void setDebugReturnToken(boolean debugReturnToken) {
             this.debugReturnToken = debugReturnToken;
+        }
+
+        public int getTokenCreateLimit() {
+            return tokenCreateLimit;
+        }
+
+        public void setTokenCreateLimit(int tokenCreateLimit) {
+            this.tokenCreateLimit = tokenCreateLimit;
+        }
+
+        public int getTokenCreateWindowSeconds() {
+            return tokenCreateWindowSeconds;
+        }
+
+        public void setTokenCreateWindowSeconds(int tokenCreateWindowSeconds) {
+            this.tokenCreateWindowSeconds = tokenCreateWindowSeconds;
         }
     }
 

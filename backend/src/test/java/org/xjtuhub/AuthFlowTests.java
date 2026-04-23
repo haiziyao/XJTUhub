@@ -27,6 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @AutoConfigureMockMvc
 class AuthFlowTests {
+    private static final String PRIMARY_EMAIL = "student@example.com";
+    private static final String REVOKE_EMAIL = "student-revoke@example.com";
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,10 +42,10 @@ class AuthFlowTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "email": "student@example.com",
+                                  "email": "%s",
                                   "purpose": "login"
                                 }
-                                """))
+                                """.formatted(PRIMARY_EMAIL)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.email").value("student@example.com"))
                 .andExpect(jsonPath("$.data.purpose").value("login"))
@@ -59,12 +61,12 @@ class AuthFlowTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "email": "student@example.com",
+                                  "email": "%s",
                                   "purpose": "login",
                                   "token": "%s",
                                   "deviceLabel": "Chrome on Windows"
                                 }
-                                """.formatted(token)))
+                                """.formatted(PRIMARY_EMAIL, token)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("XJTUHUB_SESSION"))
                 .andExpect(jsonPath("$.data.user.nickname").value("student"))
@@ -108,11 +110,11 @@ class AuthFlowTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "email": "student@example.com",
+                                  "email": "%s",
                                   "purpose": "login",
                                   "token": "bad-token"
                                 }
-                                """))
+                                """.formatted(PRIMARY_EMAIL)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.data").doesNotExist())
                 .andExpect(jsonPath("$.error.code").value("AUTH_EMAIL_TOKEN_INVALID"))
@@ -120,7 +122,69 @@ class AuthFlowTests {
                 .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
     }
 
+    @Test
+    void revokeSessionByIdKeepsCurrentSessionActive() throws Exception {
+        Cookie firstSession = loginAndGetSessionCookie(REVOKE_EMAIL, "device-one");
+        String firstSessionId = currentSessionId(firstSession);
+
+        Cookie secondSession = loginAndGetSessionCookie(REVOKE_EMAIL, "device-two");
+        String secondSessionId = currentSessionId(secondSession);
+
+        mockMvc.perform(delete("/api/v1/auth/sessions/{sessionId}", firstSessionId).cookie(secondSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.revoked").value(true));
+
+        mockMvc.perform(get("/api/v1/auth/sessions").cookie(secondSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items", hasSize(1)))
+                .andExpect(jsonPath("$.data.items[0].id").value(secondSessionId))
+                .andExpect(jsonPath("$.data.items[0].current").value(true));
+
+        mockMvc.perform(get("/api/v1/users/me").cookie(secondSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nickname").value("student-revoke"));
+
+        mockMvc.perform(get("/api/v1/users/me").cookie(firstSession))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("AUTH_LOGIN_REQUIRED"));
+    }
+
     private JsonNode readJson(MvcResult result) throws Exception {
         return objectMapper.readTree(result.getResponse().getContentAsByteArray());
+    }
+
+    private Cookie loginAndGetSessionCookie(String email, String deviceLabel) throws Exception {
+        MvcResult tokenResult = mockMvc.perform(post("/api/v1/auth/email-tokens")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "%s",
+                                  "purpose": "login"
+                                }
+                                """.formatted(email)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String token = readJson(tokenResult).at("/data/token").asText();
+
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/email-sessions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "%s",
+                                  "purpose": "login",
+                                  "token": "%s",
+                                  "deviceLabel": "%s"
+                                }
+                                """.formatted(email, token, deviceLabel)))
+                .andExpect(status().isOk())
+                .andReturn();
+        return loginResult.getResponse().getCookie("XJTUHUB_SESSION");
+    }
+
+    private String currentSessionId(Cookie sessionCookie) throws Exception {
+        MvcResult sessions = mockMvc.perform(get("/api/v1/auth/sessions").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andReturn();
+        return readJson(sessions).at("/data/items/0/id").asText();
     }
 }

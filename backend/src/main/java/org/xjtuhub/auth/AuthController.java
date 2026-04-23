@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +53,18 @@ public class AuthController {
     public ApiResponse<OffsetPageResponse<AuthSessionDto>> listSessions(HttpServletRequest servletRequest) {
         return ApiResponse.ok(
                 authService.listSessions(servletRequest),
+                RequestContext.requestId(servletRequest),
+                RequestContext.durationMs(servletRequest)
+        );
+    }
+
+    @DeleteMapping("/sessions/{sessionId}")
+    public ApiResponse<SessionRevokeResponse> revokeSessionById(
+            @PathVariable String sessionId,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.ok(
+                authService.revokeSessionById(servletRequest, sessionId),
                 RequestContext.requestId(servletRequest),
                 RequestContext.durationMs(servletRequest)
         );

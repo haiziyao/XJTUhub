@@ -118,6 +118,15 @@ class InMemoryAuthStore implements AuthStore {
     }
 
     @Override
+    public Optional<StoredSession> findActiveSessionById(long sessionId, Instant now) {
+        StoredSession session = sessions.get(sessionId);
+        if (session == null || !"active".equals(session.status()) || !session.expiresAt().isAfter(now)) {
+            return Optional.empty();
+        }
+        return Optional.of(session);
+    }
+
+    @Override
     public List<StoredSession> findActiveSessionsByUserId(long userId, Instant now) {
         return sessions.values().stream()
                 .filter(session -> session.userId() == userId)
@@ -144,6 +153,15 @@ class InMemoryAuthStore implements AuthStore {
                 session.createdAt(),
                 now
         ));
+    }
+
+    @Override
+    public int countEmailTokensCreatedSince(String email, String purpose, Instant since) {
+        return Math.toIntExact(tokens.values().stream()
+                .filter(token -> token.email().equals(email))
+                .filter(token -> token.purpose().equals(purpose))
+                .filter(token -> !token.createdAt().isBefore(since))
+                .count());
     }
 
     @Override

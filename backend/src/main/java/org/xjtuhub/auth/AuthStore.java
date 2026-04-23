@@ -23,9 +23,13 @@ interface AuthStore {
 
     Optional<StoredSession> findActiveSession(String tokenHash, Instant now);
 
+    Optional<StoredSession> findActiveSessionById(long sessionId, Instant now);
+
     List<StoredSession> findActiveSessionsByUserId(long userId, Instant now);
 
     void revokeSession(long sessionId, Instant now);
+
+    int countEmailTokensCreatedSince(String email, String purpose, Instant since);
 
     void recordLoginEvent(Long userId, String provider, String eventType, boolean success, String failureReason, String ipAddress, String ipHash, String userAgentHash, Instant now);
 

@@ -17,8 +17,10 @@ The current backend skeleton includes:
   - `POST /api/v1/auth/email-tokens`
   - `POST /api/v1/auth/email-sessions`
   - `GET /api/v1/auth/sessions`
+  - `DELETE /api/v1/auth/sessions/{sessionId}`
   - `DELETE /api/v1/auth/sessions/current`
   - `GET /api/v1/users/me`
+- Email token creation supports rate limiting and a pluggable sender interface.
 - Flyway migrations mirrored from `../database/mysql`.
 - Environment variable placeholders for MySQL, Redis, and MinIO.
 
