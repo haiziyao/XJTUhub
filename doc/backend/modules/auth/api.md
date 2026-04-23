@@ -258,8 +258,9 @@ GET /api/v1/auth/login-events
 
 ## 7. 当前实现说明
 
-- 当运行环境存在 `JdbcTemplate` 时，存储层使用 `JdbcAuthStore`。
+- 当运行环境存在数据库与 MyBatis 会话工厂时，存储层使用 `MybatisAuthStore`。
 - 测试环境回退到 `InMemoryAuthStore`。
 - 邮件发送通过 `EmailSender` 抽象。
 - 默认发送实现为 `LoggingEmailSender`。
 - 当前限流通过数据库 / 内存存储统计最近时间窗口内的创建次数实现。
+- 数据访问层已切换为 MyBatis / MyBatis-Plus。

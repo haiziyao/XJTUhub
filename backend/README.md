@@ -7,6 +7,7 @@ Spring Boot modular monolith backend.
 The current backend skeleton includes:
 
 - Spring Boot application entrypoint.
+- MyBatis / MyBatis-Plus persistence foundation.
 - Global API response envelope shape.
 - Global exception handling for validation, business, and unexpected errors.
 - Shared offset/cursor pagination DTOs.

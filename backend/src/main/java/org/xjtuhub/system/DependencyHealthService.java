@@ -2,29 +2,32 @@ package org.xjtuhub.system;
 
 import io.minio.BucketExistsArgs;
 import io.minio.MinioClient;
+import javax.sql.DataSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
 public class DependencyHealthService {
-    private final ObjectProvider<JdbcTemplate> jdbcTemplate;
+    private final ObjectProvider<DataSource> dataSource;
     private final ObjectProvider<StringRedisTemplate> redisTemplate;
     private final ObjectProvider<MinioClient> minioClient;
     private final MinioProperties minioProperties;
 
     public DependencyHealthService(
-            ObjectProvider<JdbcTemplate> jdbcTemplate,
+            ObjectProvider<DataSource> dataSource,
             ObjectProvider<StringRedisTemplate> redisTemplate,
             ObjectProvider<MinioClient> minioClient,
             MinioProperties minioProperties
     ) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.dataSource = dataSource;
         this.redisTemplate = redisTemplate;
         this.minioClient = minioClient;
         this.minioProperties = minioProperties;
@@ -39,15 +42,16 @@ public class DependencyHealthService {
     }
 
     private DependencyHealthStatus checkMysql() {
-        JdbcTemplate client = jdbcTemplate.getIfAvailable();
+        DataSource client = dataSource.getIfAvailable();
         if (client == null) {
-            return DependencyHealthStatus.skipped("JdbcTemplate is not configured.");
+            return DependencyHealthStatus.skipped("DataSource is not configured.");
         }
 
-        try {
-            client.queryForObject("SELECT 1", Integer.class);
+        try (Connection connection = client.getConnection();
+             PreparedStatement statement = connection.prepareStatement("SELECT 1");
+             ResultSet ignored = statement.executeQuery()) {
             return DependencyHealthStatus.ok("MySQL responded to SELECT 1.");
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
             return DependencyHealthStatus.down(ex.getClass().getSimpleName());
         }
     }

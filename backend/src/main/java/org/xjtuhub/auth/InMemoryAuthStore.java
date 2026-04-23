@@ -1,9 +1,9 @@
 package org.xjtuhub.auth;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.xjtuhub.common.support.IdGenerator;
+import org.apache.ibatis.session.SqlSessionFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
-@ConditionalOnMissingBean(JdbcTemplate.class)
+@ConditionalOnMissingBean(SqlSessionFactory.class)
 class InMemoryAuthStore implements AuthStore {
     private final IdGenerator idGenerator;
     private final Map<Long, StoredEmailToken> tokens = new ConcurrentHashMap<>();
