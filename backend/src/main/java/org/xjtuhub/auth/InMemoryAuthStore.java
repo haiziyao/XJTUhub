@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
-@ConditionalOnMissingBean(SqlSessionFactory.class)
+    @ConditionalOnMissingBean(SqlSessionFactory.class)
 class InMemoryAuthStore implements AuthStore {
     private final IdGenerator idGenerator;
     private final Map<Long, StoredEmailToken> tokens = new ConcurrentHashMap<>();
@@ -116,8 +116,18 @@ class InMemoryAuthStore implements AuthStore {
     }
 
     @Override
-    public StoredSession saveSession(long userId, String tokenHash, String loginProvider, String deviceLabel, Instant expiresAt, Instant now) {
-        StoredSession session = new StoredSession(idGenerator.nextId(), userId, tokenHash, "active", loginProvider, deviceLabel, expiresAt, now, now, now);
+    public StoredSession saveSession(
+            long userId,
+            String tokenHash,
+            String loginProvider,
+            String deviceLabel,
+            String ipAddress,
+            String ipHash,
+            String userAgentHash,
+            Instant expiresAt,
+            Instant now
+    ) {
+        StoredSession session = new StoredSession(idGenerator.nextId(), userId, tokenHash, "active", loginProvider, deviceLabel, ipAddress, ipHash, userAgentHash, expiresAt, now, now, now);
         sessions.put(session.id(), session);
         return session;
     }
@@ -163,6 +173,9 @@ class InMemoryAuthStore implements AuthStore {
                 session.status(),
                 session.loginProvider(),
                 session.deviceLabel(),
+                session.ipAddress(),
+                session.ipHash(),
+                session.userAgentHash(),
                 session.expiresAt(),
                 now,
                 session.createdAt(),
@@ -183,6 +196,9 @@ class InMemoryAuthStore implements AuthStore {
                 "revoked",
                 session.loginProvider(),
                 session.deviceLabel(),
+                session.ipAddress(),
+                session.ipHash(),
+                session.userAgentHash(),
                 session.expiresAt(),
                 session.lastSeenAt(),
                 session.createdAt(),

@@ -21,7 +21,17 @@ interface AuthStore {
 
     void markEmailIdentityVerified(long userId, String email, Instant now);
 
-    StoredSession saveSession(long userId, String tokenHash, String loginProvider, String deviceLabel, Instant expiresAt, Instant now);
+    StoredSession saveSession(
+            long userId,
+            String tokenHash,
+            String loginProvider,
+            String deviceLabel,
+            String ipAddress,
+            String ipHash,
+            String userAgentHash,
+            Instant expiresAt,
+            Instant now
+    );
 
     Optional<StoredSession> findActiveSession(String tokenHash, Instant now);
 
@@ -74,6 +84,9 @@ interface AuthStore {
             String status,
             String loginProvider,
             String deviceLabel,
+            String ipAddress,
+            String ipHash,
+            String userAgentHash,
             Instant expiresAt,
             Instant lastSeenAt,
             Instant createdAt,

@@ -93,8 +93,21 @@ public class AuthService {
 
         String rawSessionToken = randomToken() + randomToken();
         Instant sessionExpiresAt = now.plus(Duration.ofDays(authProperties.getSession().getTtlDays()));
-        AuthStore.StoredSession session = authStore.saveSession(user.id(), sha256(rawSessionToken), "email", request.deviceLabel(), sessionExpiresAt, now);
-        authStore.recordLoginEvent(user.id(), "email", "email_token_login", true, null, clientIp(servletRequest), hashNullable(clientIp(servletRequest)), hashNullable(userAgent(servletRequest)), now);
+        String ipAddress = clientIp(servletRequest);
+        String ipHash = hashNullable(ipAddress);
+        String userAgentHash = hashNullable(userAgent(servletRequest));
+        AuthStore.StoredSession session = authStore.saveSession(
+                user.id(),
+                sha256(rawSessionToken),
+                "email",
+                request.deviceLabel(),
+                ipAddress,
+                ipHash,
+                userAgentHash,
+                sessionExpiresAt,
+                now
+        );
+        authStore.recordLoginEvent(user.id(), "email", "email_token_login", true, null, ipAddress, ipHash, userAgentHash, now);
 
         CurrentUserDto currentUser = currentUserFor(user.id(), session.id());
         AuthSessionDto currentSession = toSessionDto(session, session.id());
@@ -269,12 +282,15 @@ public class AuthService {
                         session.id(),
                         session.userId(),
                         session.sessionTokenHash(),
-                        session.status(),
-                        session.loginProvider(),
-                        session.deviceLabel(),
-                        session.expiresAt(),
-                        now,
-                        session.createdAt(),
+                session.status(),
+                session.loginProvider(),
+                session.deviceLabel(),
+                session.ipAddress(),
+                session.ipHash(),
+                session.userAgentHash(),
+                session.expiresAt(),
+                now,
+                session.createdAt(),
                         now
                 )
         );

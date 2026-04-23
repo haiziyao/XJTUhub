@@ -24,6 +24,8 @@ The current backend skeleton includes:
   - `GET /api/v1/users/me`
   - `PATCH /api/v1/users/me`
 - Email token creation supports rate limiting and a pluggable sender interface.
+- Email token verification rate limiting prefers Redis and falls back to in-memory storage.
+- Session security metadata persists IP/IP hash/user-agent hash in the session store.
 - Flyway migrations mirrored from `../database/mysql`.
 - Environment variable placeholders for MySQL, Redis, and MinIO.
 

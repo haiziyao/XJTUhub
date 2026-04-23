@@ -167,7 +167,17 @@ class MybatisAuthStore implements AuthStore {
     }
 
     @Override
-    public StoredSession saveSession(long userId, String tokenHash, String loginProvider, String deviceLabel, Instant expiresAt, Instant now) {
+    public StoredSession saveSession(
+            long userId,
+            String tokenHash,
+            String loginProvider,
+            String deviceLabel,
+            String ipAddress,
+            String ipHash,
+            String userAgentHash,
+            Instant expiresAt,
+            Instant now
+    ) {
         SessionEntity entity = new SessionEntity();
         entity.setId(idGenerator.nextId());
         entity.setUserId(userId);
@@ -175,6 +185,9 @@ class MybatisAuthStore implements AuthStore {
         entity.setStatus("active");
         entity.setLoginProvider(loginProvider);
         entity.setDeviceLabel(deviceLabel);
+        entity.setIpAddress(ipAddress);
+        entity.setIpHash(ipHash);
+        entity.setUserAgentHash(userAgentHash);
         entity.setExpiresAt(ts(expiresAt));
         entity.setLastSeenAt(ts(now));
         entity.setCreatedAt(ts(now));
@@ -335,6 +348,9 @@ class MybatisAuthStore implements AuthStore {
                 entity.getStatus(),
                 entity.getLoginProvider(),
                 entity.getDeviceLabel(),
+                entity.getIpAddress(),
+                entity.getIpHash(),
+                entity.getUserAgentHash(),
                 instant(entity.getExpiresAt()),
                 instant(entity.getLastSeenAt()),
                 instant(entity.getCreatedAt()),

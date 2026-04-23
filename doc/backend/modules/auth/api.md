@@ -303,6 +303,7 @@ GET /api/v1/auth/login-events
 - 邮件发送通过 `EmailSender` 抽象，默认实现为 `LoggingEmailSender`。
 - 数据访问层已经切换到 MyBatis / MyBatis-Plus。
 - 会话最近活跃时间通过 `sessions.last_seen_at` 维护。
-- 验证码校验限流当前通过应用层存储实现，后续可以替换为 Redis。
+- 登录会话创建时会写入 `sessions.ip_address`、`sessions.ip_hash`、`sessions.user_agent_hash`。
+- 验证码校验限流优先使用 Redis；当前运行环境没有 `StringRedisTemplate` 时回退到内存实现。
 - 当前用户接口会返回后端计算的 `identitySummary` 和 `identityBindings`，供前端在昵称后展示身份来源与绑定情况。
 - 校园扫码登录目前只预留接口边界，不实现任何伪生产协议逻辑。

@@ -1,14 +1,11 @@
 package org.xjtuhub.auth;
 
-import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
 class InMemoryEmailTokenVerifyAttemptStore implements EmailTokenVerifyAttemptStore {
     private final Map<String, Deque<Instant>> failuresByKey = new ConcurrentHashMap<>();
 
