@@ -77,11 +77,11 @@ class BackendApplicationTests {
     }
 
     @Test
-    void adminReservedCampusVerificationEndpointUsesStableEnvelope() throws Exception {
+    void adminCampusVerificationEndpointRequiresLogin() throws Exception {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/admin/users/{userId}/campus-verification", "123456"))
-                .andExpect(status().isNotImplemented())
+                .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.error.code").value("ADMIN_CAMPUS_VERIFICATION_RESERVED"))
+                .andExpect(jsonPath("$.error.code").value("AUTH_LOGIN_REQUIRED"))
                 .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
                 .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
     }

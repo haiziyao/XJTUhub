@@ -305,6 +305,7 @@ GET /api/v1/auth/login-events
 
 - 运行环境存在数据库和 MyBatis 会话工厂时，持久层使用 `MybatisAuthStore`。
 - 测试环境默认回退到 `InMemoryAuthStore`。
+- `AuthStore` 当前通过显式配置选择实现，避免运行期误落到内存实现。
 - 邮件发送通过 `EmailSender` 抽象；存在 `JavaMailSender` 时使用 `SmtpEmailSender`，否则回退到 `LoggingEmailSender`。
 - 数据访问层已经切换到 MyBatis / MyBatis-Plus。
 - 会话最近活跃时间通过 `sessions.last_seen_at` 维护。

@@ -132,6 +132,47 @@
 - `backend/README.md`
 - `doc/backend/modules/auth/api.md`
 
+### `Uncommitted auth store selection fix`
+
+完成内容：
+
+- 修复 `AuthStore` 在真实运行环境中误回退到 `InMemoryAuthStore` 的实现选择问题。
+- `AuthStore` 选择改为显式配置：
+  - 存在完整 MyBatis 依赖时使用 `MybatisAuthStore`
+  - 否则回退到共享的 `InMemoryAuthStore`
+- 增加 `AuthStoreSelectionTests`，防止后续再次误回退。
+- 真实链路已验证：邮箱验证码发送后会写入 MySQL 审计表，登录闭环成功。
+
+影响范围：
+
+- `backend/src/main/java/org/xjtuhub/auth`
+- `backend/src/test/java/org/xjtuhub/auth/AuthStoreSelectionTests.java`
+- `doc/backend/modules/auth/api.md`
+
+### `Uncommitted admin campus verification MVP`
+
+完成内容：
+
+- `admin` 模块落地第一条可执行后台能力：
+  - `POST /api/v1/admin/users/{userId}/campus-verification`
+- 新增 `AdminStore` 抽象以及 MyBatis / 内存双实现。
+- 接口要求：
+  - 当前用户已登录
+  - 当前用户在 `admin_accounts` 中存在激活态记录
+- 成功后会：
+  - 将目标用户 `auth_level` 更新为 `campus_app_verified`
+  - 写入或更新 `campus_app` 身份绑定
+  - 写入 `audit_logs`
+- 增加端到端测试：
+  - 管理员成功标记校园认证
+  - 非管理员访问被拒绝
+
+影响范围：
+
+- `backend/src/main/java/org/xjtuhub/admin`
+- `backend/src/test/java/org/xjtuhub/admin/AdminFlowTests.java`
+- `doc/backend/modules/admin/api.md`
+
 ## 当前建议接力点
 
 按优先级建议后续继续实现：

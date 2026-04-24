@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-interface AuthStore {
+public interface AuthStore {
     StoredEmailToken saveEmailToken(String email, String purpose, String tokenHash, Instant expiresAt, Instant now);
 
     Optional<StoredEmailToken> findActiveEmailToken(String email, String purpose, String tokenHash);

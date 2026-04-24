@@ -2,9 +2,6 @@ package org.xjtuhub.auth;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.stereotype.Repository;
 import org.xjtuhub.auth.persistence.entity.EmailVerificationTokenEntity;
 import org.xjtuhub.auth.persistence.entity.SessionEntity;
 import org.xjtuhub.auth.persistence.entity.UserAuthIdentityEntity;
@@ -24,8 +21,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
-@ConditionalOnBean(SqlSessionFactory.class)
 class MybatisAuthStore implements AuthStore {
     private final EmailVerificationTokenMapper tokenMapper;
     private final UserMapper userMapper;

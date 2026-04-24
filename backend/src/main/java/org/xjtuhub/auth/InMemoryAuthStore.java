@@ -1,9 +1,7 @@
 package org.xjtuhub.auth;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 import org.xjtuhub.common.support.IdGenerator;
-import org.apache.ibatis.session.SqlSessionFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -13,9 +11,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Repository
-    @ConditionalOnMissingBean(SqlSessionFactory.class)
-class InMemoryAuthStore implements AuthStore {
+@Component
+public class InMemoryAuthStore implements AuthStore {
     private final IdGenerator idGenerator;
     private final Map<Long, StoredEmailToken> tokens = new ConcurrentHashMap<>();
     private final Map<Long, StoredUser> users = new ConcurrentHashMap<>();
@@ -262,6 +259,28 @@ class InMemoryAuthStore implements AuthStore {
                 .anyMatch(record -> record.userId == userId
                         && "active".equals(record.status)
                         && (record.expiresAt == null || record.expiresAt.isAfter(now)));
+    }
+
+    public void markCampusVerification(long userId, Instant now) {
+        StoredUser user = users.get(userId);
+        if (user == null) {
+            return;
+        }
+        users.put(userId, new StoredUser(
+                user.id(),
+                user.nickname(),
+                user.avatarUrl(),
+                user.bio(),
+                user.accountStatus(),
+                "campus_app_verified",
+                user.primaryIdentityProvider(),
+                user.lastLoginProvider()
+        ));
+
+        List<StoredIdentityBinding> bindings = new ArrayList<>(identityBindingsByUserId.getOrDefault(userId, List.of()));
+        bindings.removeIf(binding -> "campus_app".equals(binding.provider()));
+        bindings.add(new StoredIdentityBinding("campus_app", "校园认证（后台标记）", "verified", now));
+        identityBindingsByUserId.put(userId, bindings);
     }
 
     private record MembershipRecord(long userId, String status, Instant expiresAt) {
