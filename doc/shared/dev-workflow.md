@@ -12,7 +12,7 @@ XJTUhub 采用文档优先的开发方式。
 6. 按已批准文档实现后端与前端。
 7. 每实现一个后端功能，都必须同步编写或更新对应模块的接口文档，位置为 `doc/backend/modules/<module>/`。
 8. 补充测试。
-9. 更新 `TODO.md` 与决策文档。
+9. 更新 `doc/shared/task-board.md`、`doc/shared/task-completion-log.md` 与决策文档。
 
 ## 前后端分离
 
@@ -20,6 +20,7 @@ XJTUhub 采用文档优先的开发方式。
 - 模块接口文档位于 `doc/backend/modules/<module>`。
 - 前端文档位于 `doc/frontend`。
 - 共享术语与流程文档位于 `doc/shared`。
+- 跨 agent 协作任务台账位于 `doc/shared/task-board.md` 与 `doc/shared/task-completion-log.md`。
 - 允许交叉引用。
 - 混合业务规则与视觉实现的文档必须拆分。
 - 接口文档必须按模块拆分，不能持续堆到一个全局实现说明里。
@@ -33,6 +34,12 @@ XJTUhub 采用文档优先的开发方式。
 2. 如果变更影响架构、流程、安全或产品范围，则补充决策记录。
 3. 更新受影响文档。
 4. 在实现说明或 PR 描述中说明变化。
+
+## 多 Agent 协作
+
+- 跨 agent 协作时，以 `doc/shared/task-board.md` 作为唯一总任务表。
+- 完成任务后，必须在 `doc/shared/task-completion-log.md` 追加完成记录。
+- `TODO.md` 可以继续保留作顶层简略提示，但不能替代任务表和完成记录。
 
 ## 分支与提交建议
 

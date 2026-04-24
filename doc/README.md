@@ -63,6 +63,8 @@ XJTUhub uses documentation-first development. This map explains where each kind 
 | `shared/glossary.md` | Shared terms used by product, backend, and frontend docs. |
 | `shared/decision-log.md` | Durable decisions and reasons. |
 | `shared/dev-workflow.md` | Documentation-first workflow, separation rules, and review guidance. |
+| `shared/task-board.md` | Cross-agent task board and current assignment status. |
+| `shared/task-completion-log.md` | Standardized completion records for finished tasks. |
 
 ## Ownership Rule
 

@@ -18,6 +18,8 @@ Read only the documents relevant to the current task, but always start here.
 - Backend architecture: `doc/backend/backend-architecture.md`
 - Frontend workflow: `doc/frontend/frontend-workflow.md`
 - Development workflow: `doc/shared/dev-workflow.md`
+- Task board: `doc/shared/task-board.md`
+- Task completion log: `doc/shared/task-completion-log.md`
 
 ## Hard Rules
 
@@ -45,7 +47,7 @@ Read only the documents relevant to the current task, but always start here.
 
 ## Development Notes
 
-- Update `TODO.md` when starting or finishing meaningful project work.
+- Update `doc/shared/task-board.md` and `doc/shared/task-completion-log.md` when starting or finishing meaningful project work.
 - Update the relevant document before changing a boundary, workflow, or rule.
 - Use `doc/shared/decision-log.md` for durable decisions and tradeoffs.
 - Keep implementation details out of top-level documents unless they are needed for navigation.
