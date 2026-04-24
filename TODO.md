@@ -26,3 +26,9 @@ This file is the live execution board. Keep completed items visible for a while 
 - [x] Choose Elasticsearch for Phase 1 search.
 - [x] Establish baseline constraint documents.
 - [x] Draft global backend data/API foundation PRDs.
+- [x] Complete T-004 admin current identity query.
+- [x] Complete T-005 admin audit log list.
+- [x] Complete T-006 campus verification history query.
+- [x] Complete T-007 campus scan login reserved data layer.
+- [x] Complete T-008 admin user identity bindings query.
+- [x] Complete T-009 object storage service MVP.

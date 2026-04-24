@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.xjtuhub.auth.persistence.mapper.CampusAppLoginSessionMapper;
 import org.xjtuhub.auth.persistence.mapper.EmailVerificationTokenMapper;
 import org.xjtuhub.auth.persistence.mapper.SessionMapper;
 import org.xjtuhub.auth.persistence.mapper.UserAuthIdentityMapper;
@@ -65,6 +66,21 @@ public class AuthConfiguration {
             return new RedisEmailVerificationCodeStore(stringRedisTemplate);
         }
         return new InMemoryEmailVerificationCodeStore();
+    }
+
+    @Bean
+    CampusScanStore campusScanStore(
+            ObjectProvider<SqlSessionFactory> sqlSessionFactoryProvider,
+            ObjectProvider<CampusAppLoginSessionMapper> campusAppLoginSessionMapperProvider,
+            org.xjtuhub.common.support.IdGenerator idGenerator,
+            InMemoryCampusScanStore inMemoryCampusScanStore
+    ) {
+        SqlSessionFactory sqlSessionFactory = sqlSessionFactoryProvider.getIfAvailable();
+        CampusAppLoginSessionMapper mapper = campusAppLoginSessionMapperProvider.getIfAvailable();
+        if (sqlSessionFactory != null && mapper != null) {
+            return new MybatisCampusScanStore(mapper, idGenerator);
+        }
+        return inMemoryCampusScanStore;
     }
 
     @Bean

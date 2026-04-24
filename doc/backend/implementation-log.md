@@ -4,6 +4,101 @@
 
 ## 2026-04-24
 
+### `Uncommitted object storage service MVP`
+
+完成内容：
+- 新增 `ObjectStorageService` 统一对象存储接口。
+- 新增 `ObjectUploadRequest`、`PresignedObjectUrl`、`ObjectMetadata`。
+- 新增 `MinioObjectStorageAdapter`，支持预签名上传/下载、删除、复制和读取元数据。
+- 新增 `InMemoryObjectStorageService`，用于测试和本地无 MinIO 依赖场景。
+- 新增 `FileStorageConfiguration`，存在 `MinioClient` 时优先使用 MinIO adapter。
+- 补充文件存储模块文档和测试。
+
+影响范围：
+- `backend/src/main/java/org/xjtuhub/filestorage`
+- `backend/src/test/java/org/xjtuhub/filestorage`
+- `doc/backend/modules/file_storage/api.md`
+- `doc/backend/storage-and-files.md`
+
+### `Uncommitted admin user identity bindings query`
+
+完成内容：
+- 新增 `GET /api/v1/admin/users/{userId}/identity-bindings`。
+- 返回指定用户身份绑定列表，供后台核验用户身份。
+- 接口复用管理员登录与激活管理员账号校验。
+- `primary` 与 `lastUsed` 由后端基于用户记录计算。
+- 补充管理员成功查询与非管理员拒绝访问测试。
+
+影响范围：
+- `backend/src/main/java/org/xjtuhub/admin`
+- `backend/src/test/java/org/xjtuhub/admin/AdminFlowTests.java`
+- `doc/backend/modules/admin/api.md`
+- `doc/shared/task-board.md`
+- `doc/shared/task-completion-log.md`
+
+### `Uncommitted campus scan session store`
+
+完成内容：
+- 新增 `CampusScanStore` 抽象，预留校园扫码登录会话读写能力。
+- 新增 `InMemoryCampusScanStore` 和 `MybatisCampusScanStore`。
+- 新增 `CampusAppLoginSessionEntity` / `CampusAppLoginSessionMapper`，映射 `campus_app_login_sessions`。
+- 支持创建扫码会话、按 `sceneId` 查询、按二维码 token hash 查询、标记扫描、确认和取消。
+- HTTP 扫码接口继续保持 `501 AUTH_CAMPUS_SCAN_RESERVED`，不接真实校园协议。
+
+影响范围：
+- `backend/src/main/java/org/xjtuhub/auth`
+- `backend/src/main/java/org/xjtuhub/auth/persistence`
+- `backend/src/test/java/org/xjtuhub/auth/CampusScanStoreTests.java`
+- `backend/src/test/java/org/xjtuhub/auth/CampusScanStoreSelectionTests.java`
+- `doc/backend/modules/auth/api.md`
+
+### `Uncommitted campus verification history query`
+
+完成内容：
+- 新增 `GET /api/v1/admin/users/{userId}/campus-verification/history`，按目标用户查询手工校园认证标记历史。
+- 基于 `audit_logs` 筛选 `action = admin_mark_campus_verification`、`target_type = user`、`target_id = userId`。
+- `AdminStore` 增加 action/target 筛选分页读取与计数能力。
+- MyBatis / 内存双实现均支持筛选查询。
+- 补充管理员成功查询与非管理员拒绝访问测试。
+
+影响范围：
+- `backend/src/main/java/org/xjtuhub/admin`
+- `backend/src/test/java/org/xjtuhub/admin/AdminFlowTests.java`
+- `doc/backend/modules/admin/api.md`
+- `doc/shared/task-board.md`
+- `doc/shared/task-completion-log.md`
+
+### `Uncommitted admin audit log list`
+
+完成内容：
+- 新增 `GET /api/v1/admin/audit-logs`，支持 `page` / `pageSize` 基础分页。
+- 新增 `AdminAuditLogDto`，返回审计动作、对象、请求 ID、安全哈希、详情 JSON 与创建时间。
+- `AdminStore` 增加审计日志分页读取与计数能力。
+- MyBatis 实现读取 `audit_logs`，内存实现保存并返回审计记录，保持测试和本地回退路径可用。
+- 补充管理员成功查询与非管理员拒绝访问测试。
+
+影响范围：
+- `backend/src/main/java/org/xjtuhub/admin`
+- `backend/src/test/java/org/xjtuhub/admin/AdminFlowTests.java`
+- `doc/backend/modules/admin/api.md`
+- `doc/shared/task-board.md`
+- `doc/shared/task-completion-log.md`
+
+### `Uncommitted admin current identity query`
+
+完成内容：
+- 新增 `GET /api/v1/admin/me`，返回当前管理员账号 ID、用户 ID、角色和状态。
+- 复用现有登录会话校验与 `admin_accounts.status = active` 管理员校验。
+- 新增 `CurrentAdminResponse` DTO。
+- 补充管理员成功查询与非管理员拒绝访问测试。
+
+影响范围：
+- `backend/src/main/java/org/xjtuhub/admin`
+- `backend/src/test/java/org/xjtuhub/admin/AdminFlowTests.java`
+- `doc/backend/modules/admin/api.md`
+- `doc/shared/task-board.md`
+- `doc/shared/task-completion-log.md`
+
 ### `2d23e5b Migrate auth persistence to mybatis plus`
 
 完成内容：
@@ -172,6 +267,24 @@
 - `backend/src/main/java/org/xjtuhub/admin`
 - `backend/src/test/java/org/xjtuhub/admin/AdminFlowTests.java`
 - `doc/backend/modules/admin/api.md`
+
+### `Uncommitted search placeholder skeleton`
+
+完成内容：
+
+- `search` 模块新增可运行 API 骨架：
+  - `GET /api/v1/search`
+  - `GET /api/v1/search/index-tasks`
+- 搜索接口当前返回稳定空结果，供前端联调和契约测试使用。
+- 索引任务接口当前返回固定占位任务状态，供后台页和后续 ES 接入前联调使用。
+- 新增 `SearchFlowTests`。
+- 新增中文模块接口文档。
+
+影响范围：
+
+- `backend/src/main/java/org/xjtuhub/search`
+- `backend/src/test/java/org/xjtuhub/search/SearchFlowTests.java`
+- `doc/backend/modules/search/api.md`
 
 ## 当前建议接力点
 

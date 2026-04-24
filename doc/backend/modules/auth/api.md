@@ -168,6 +168,12 @@ POST /api/v1/auth/campus-scan/sessions/{sceneId}/confirm
 - 统一错误码为 `AUTH_CAMPUS_SCAN_RESERVED`。
 - 该返回表示接口边界已经预留，后续接入真实校园官方 APP 协议时沿用此路由前缀。
 
+当前数据层预留：
+
+- 已预留 `campus_app_login_sessions` 读写层。
+- 数据层支持创建扫码会话、按 `sceneId` 查询、按二维码 token hash 查询、标记已扫描、标记已确认、标记已取消。
+- 当前仅供后续 adapter 接入真实校园协议时复用，不改变上述 HTTP 接口的 501 预留行为。
+
 ## 4. 获取当前用户会话列表
 
 ```text

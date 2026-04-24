@@ -14,3 +14,6 @@
 
 - `auth/`
 - `user/`
+- `admin/`
+- `file_storage/`
+- `search/`

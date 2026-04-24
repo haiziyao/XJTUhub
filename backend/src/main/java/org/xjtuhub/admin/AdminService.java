@@ -5,11 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.xjtuhub.auth.AuthProperties;
 import org.xjtuhub.auth.AuthStore;
 import org.xjtuhub.common.api.BusinessException;
+import org.xjtuhub.common.api.IdentityBindingDto;
+import org.xjtuhub.common.api.OffsetPageResponse;
 import org.xjtuhub.common.support.TimeProvider;
 import org.xjtuhub.common.web.RequestContext;
 
@@ -18,10 +19,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class AdminService {
+    private static final String CAMPUS_VERIFICATION_ACTION = "admin_mark_campus_verification";
+    private static final String USER_TARGET_TYPE = "user";
+
     private final AdminStore adminStore;
     private final AuthStore authStore;
     private final AuthProperties authProperties;
@@ -48,8 +53,7 @@ public class AdminService {
             HttpServletRequest servletRequest
     ) {
         long actorUserId = requireCurrentUserId(servletRequest);
-        AdminStore.StoredAdminAccount adminAccount = adminStore.findActiveAdminByUserId(actorUserId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.FORBIDDEN, "ADMIN_FORBIDDEN", "Admin permission required."));
+        AdminStore.StoredAdminAccount adminAccount = requireActiveAdmin(actorUserId);
         long targetUserId = Long.parseLong(userId);
         AdminStore.StoredUserRecord targetUser = adminStore.findUserById(targetUserId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found."));
@@ -75,6 +79,90 @@ public class AdminService {
                 "campus_app_verified",
                 "verified",
                 now
+        );
+    }
+
+    public CurrentAdminResponse currentAdmin(HttpServletRequest servletRequest) {
+        long actorUserId = requireCurrentUserId(servletRequest);
+        AdminStore.StoredAdminAccount adminAccount = requireActiveAdmin(actorUserId);
+        return new CurrentAdminResponse(
+                Long.toString(adminAccount.id()),
+                Long.toString(adminAccount.userId()),
+                adminAccount.adminRole(),
+                adminAccount.status()
+        );
+    }
+
+    public OffsetPageResponse<AdminAuditLogDto> listAuditLogs(HttpServletRequest servletRequest, int page, int pageSize) {
+        long actorUserId = requireCurrentUserId(servletRequest);
+        requireActiveAdmin(actorUserId);
+        int offset = (page - 1) * pageSize;
+        long total = adminStore.countAuditLogs();
+        List<AdminAuditLogDto> items = adminStore.listAuditLogs(offset, pageSize).stream()
+                .map(this::toAuditLogDto)
+                .toList();
+        return new OffsetPageResponse<>(items, page, pageSize, total, (long) page * pageSize < total);
+    }
+
+    public OffsetPageResponse<AdminAuditLogDto> listCampusVerificationHistory(
+            HttpServletRequest servletRequest,
+            String userId,
+            int page,
+            int pageSize
+    ) {
+        long actorUserId = requireCurrentUserId(servletRequest);
+        requireActiveAdmin(actorUserId);
+        long targetUserId = Long.parseLong(userId);
+        int offset = (page - 1) * pageSize;
+        long total = adminStore.countAuditLogsByActionAndTarget(CAMPUS_VERIFICATION_ACTION, USER_TARGET_TYPE, targetUserId);
+        List<AdminAuditLogDto> items = adminStore.listAuditLogsByActionAndTarget(CAMPUS_VERIFICATION_ACTION, USER_TARGET_TYPE, targetUserId, offset, pageSize).stream()
+                .map(this::toAuditLogDto)
+                .toList();
+        return new OffsetPageResponse<>(items, page, pageSize, total, (long) page * pageSize < total);
+    }
+
+    public AdminUserIdentityBindingsResponse listUserIdentityBindings(HttpServletRequest servletRequest, String userId) {
+        long actorUserId = requireCurrentUserId(servletRequest);
+        requireActiveAdmin(actorUserId);
+        long targetUserId = Long.parseLong(userId);
+        AdminStore.StoredUserRecord targetUser = adminStore.findUserById(targetUserId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found."));
+        AuthStore.StoredUser authUser = authStore.findUserById(targetUser.id())
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found."));
+        List<IdentityBindingDto> bindings = authStore.findIdentityBindingsByUserId(targetUser.id()).stream()
+                .map(binding -> new IdentityBindingDto(
+                        binding.provider(),
+                        binding.providerDisplay(),
+                        binding.verificationStatus(),
+                        binding.provider().equals(authUser.primaryIdentityProvider()),
+                        binding.provider().equals(authUser.lastLoginProvider())
+                ))
+                .toList();
+        return new AdminUserIdentityBindingsResponse(userId, bindings);
+    }
+
+    private AdminStore.StoredAdminAccount requireActiveAdmin(long userId) {
+        return adminStore.findActiveAdminByUserId(userId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.FORBIDDEN, "ADMIN_FORBIDDEN", "Admin permission required."));
+    }
+
+    private String nullableLong(Long value) {
+        return value == null ? null : Long.toString(value);
+    }
+
+    private AdminAuditLogDto toAuditLogDto(AdminStore.StoredAuditLog log) {
+        return new AdminAuditLogDto(
+                Long.toString(log.id()),
+                nullableLong(log.actorUserId()),
+                nullableLong(log.adminAccountId()),
+                log.action(),
+                log.targetType(),
+                nullableLong(log.targetId()),
+                log.requestId(),
+                log.ipHash(),
+                log.userAgentHash(),
+                log.detailsJson(),
+                log.createdAt()
         );
     }
 

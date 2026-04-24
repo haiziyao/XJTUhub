@@ -14,6 +14,7 @@ import org.xjtuhub.common.support.IdGenerator;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 class MybatisAdminStore implements AdminStore {
@@ -106,6 +107,48 @@ class MybatisAdminStore implements AdminStore {
     }
 
     @Override
+    public List<StoredAuditLog> listAuditLogs(int offset, int limit) {
+        return auditLogMapper.selectList(
+                new LambdaQueryWrapper<AuditLogEntity>()
+                        .orderByDesc(AuditLogEntity::getCreatedAt)
+                        .orderByDesc(AuditLogEntity::getId)
+                        .last("LIMIT " + limit + " OFFSET " + offset)
+        ).stream()
+                .map(this::toStoredAuditLog)
+                .toList();
+    }
+
+    @Override
+    public long countAuditLogs() {
+        return auditLogMapper.selectCount(null);
+    }
+
+    @Override
+    public List<StoredAuditLog> listAuditLogsByActionAndTarget(String action, String targetType, long targetId, int offset, int limit) {
+        return auditLogMapper.selectList(
+                new LambdaQueryWrapper<AuditLogEntity>()
+                        .eq(AuditLogEntity::getAction, action)
+                        .eq(AuditLogEntity::getTargetType, targetType)
+                        .eq(AuditLogEntity::getTargetId, targetId)
+                        .orderByDesc(AuditLogEntity::getCreatedAt)
+                        .orderByDesc(AuditLogEntity::getId)
+                        .last("LIMIT " + limit + " OFFSET " + offset)
+        ).stream()
+                .map(this::toStoredAuditLog)
+                .toList();
+    }
+
+    @Override
+    public long countAuditLogsByActionAndTarget(String action, String targetType, long targetId) {
+        return auditLogMapper.selectCount(
+                new LambdaQueryWrapper<AuditLogEntity>()
+                        .eq(AuditLogEntity::getAction, action)
+                        .eq(AuditLogEntity::getTargetType, targetType)
+                        .eq(AuditLogEntity::getTargetId, targetId)
+        );
+    }
+
+    @Override
     public void writeAuditLog(Long actorUserId, Long adminAccountId, String action, String targetType, Long targetId, String requestId, String ipAddress, String ipHash, String userAgentHash, String detailsJson, Instant now) {
         AuditLogEntity entity = new AuditLogEntity();
         entity.setId(idGenerator.nextId());
@@ -121,6 +164,22 @@ class MybatisAdminStore implements AdminStore {
         entity.setDetailsJson(detailsJson);
         entity.setCreatedAt(ts(now));
         auditLogMapper.insert(entity);
+    }
+
+    private StoredAuditLog toStoredAuditLog(AuditLogEntity entity) {
+        return new StoredAuditLog(
+                entity.getId(),
+                entity.getActorUserId(),
+                entity.getAdminAccountId(),
+                entity.getAction(),
+                entity.getTargetType(),
+                entity.getTargetId(),
+                entity.getRequestId(),
+                entity.getIpHash(),
+                entity.getUserAgentHash(),
+                entity.getDetailsJson(),
+                entity.getCreatedAt().toInstant()
+        );
     }
 
     private Timestamp ts(Instant instant) {

@@ -33,6 +33,14 @@ Provider-specific code belongs in adapters:
 - `AliyunOssStorageAdapter`
 - `TencentCosStorageAdapter`
 
+Current implementation:
+
+- `ObjectStorageService`
+- `MinioObjectStorageAdapter`
+- `InMemoryObjectStorageService` for tests and local fallback when MinIO is not configured.
+
+See also: `doc/backend/modules/file_storage/api.md`.
+
 ## Attachment Metadata
 
 Do not store provider-only concepts as the only attachment identity.
