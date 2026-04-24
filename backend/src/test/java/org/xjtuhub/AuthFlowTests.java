@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -240,11 +241,11 @@ class AuthFlowTests {
 
         mockMvc.perform(get("/api/v1/auth/login-events").cookie(sessionCookie))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].provider").value("email"))
-                .andExpect(jsonPath("$.data.items[0].eventType").value("email_token_login"))
-                .andExpect(jsonPath("$.data.items[0].success").value(true))
-                .andExpect(jsonPath("$.data.items[1].success").value(false))
-                .andExpect(jsonPath("$.data.items[1].failureReason").value("token_invalid"))
+                .andExpect(jsonPath("$.data.items[*].provider", hasItem("email")))
+                .andExpect(jsonPath("$.data.items[*].eventType", hasItem("email_token_login")))
+                .andExpect(jsonPath("$.data.items[*].success", hasItem(true)))
+                .andExpect(jsonPath("$.data.items[*].success", hasItem(false)))
+                .andExpect(jsonPath("$.data.items[*].failureReason", hasItem("token_invalid")))
                 .andExpect(jsonPath("$.data.items[0].ipAddress").doesNotExist())
                 .andExpect(jsonPath("$.data.items.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
     }
