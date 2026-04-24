@@ -78,6 +78,28 @@
 - `backend/README.md`
 - `doc/backend/modules/auth/api.md`
 
+### `Uncommitted SMTP email delivery integration`
+
+完成内容：
+
+- 引入 `spring-boot-starter-mail`，为邮箱验证码链路接入 Spring Mail。
+- 新增 `SmtpEmailSender`，在存在 `JavaMailSender` 时通过 SMTP 真实发信。
+- `EmailSender` 选择策略调整为：
+  - SMTP 可用时使用 `SmtpEmailSender`
+  - 未配置邮件客户端时回退到 `LoggingEmailSender`
+- 新增定向测试：
+  - `SmtpEmailSenderSelectionTests`
+  - `EmailTokenRateLimitTests` 的真实 `MimeMessage` mock/stub 修复
+- 环境变量模板补充邮件配置项，支持 QQ 邮箱 SMTP。
+
+影响范围：
+
+- `backend/src/main/java/org/xjtuhub/auth`
+- `backend/src/main/resources/application.yml`
+- `.env.example`
+- `backend/README.md`
+- `doc/backend/modules/auth/api.md`
+
 ## 当前建议接力点
 
 按优先级建议后续继续实现：

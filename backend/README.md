@@ -24,6 +24,7 @@ The current backend skeleton includes:
   - `GET /api/v1/users/me`
   - `PATCH /api/v1/users/me`
 - Email token creation supports rate limiting and a pluggable sender interface.
+- Email token delivery supports SMTP via Spring Mail and falls back to logging when mail is not configured.
 - Email token verification rate limiting prefers Redis and falls back to in-memory storage.
 - Session security metadata persists IP/IP hash/user-agent hash in the session store.
 - Flyway migrations mirrored from `../database/mysql`.
@@ -54,8 +55,27 @@ MINIO_ENDPOINT
 MINIO_ACCESS_KEY
 MINIO_SECRET_KEY
 MINIO_BUCKET_NAME
+MAIL_HOST
+MAIL_PORT
+MAIL_USERNAME
+MAIL_PASSWORD
+MAIL_SMTP_AUTH
+MAIL_SMTP_STARTTLS_ENABLE
+AUTH_EMAIL_FROM_ADDRESS
+AUTH_EMAIL_FROM_NAME
 FLYWAY_ENABLED
 ```
+
+For QQ Mail SMTP, use:
+
+```text
+MAIL_HOST=smtp.qq.com
+MAIL_PORT=587
+MAIL_SMTP_AUTH=true
+MAIL_SMTP_STARTTLS_ENABLE=true
+```
+
+`MAIL_PASSWORD` should be the QQ mailbox SMTP authorization code, not the mailbox web login password.
 
 ## Database Migration
 

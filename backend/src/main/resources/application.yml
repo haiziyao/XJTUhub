@@ -16,6 +16,20 @@ spring:
       host: ${REDIS_HOST:}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+          connectiontimeout: ${MAIL_SMTP_CONNECTION_TIMEOUT_MS:5000}
+          timeout: ${MAIL_SMTP_TIMEOUT_MS:5000}
+          writetimeout: ${MAIL_SMTP_WRITE_TIMEOUT_MS:5000}
 
 mybatis-plus:
   configuration:
@@ -30,6 +44,8 @@ xjtuhub:
       token-create-window-seconds: ${AUTH_EMAIL_TOKEN_CREATE_WINDOW_SECONDS:3600}
       token-verify-limit: ${AUTH_EMAIL_TOKEN_VERIFY_LIMIT:10}
       token-verify-window-seconds: ${AUTH_EMAIL_TOKEN_VERIFY_WINDOW_SECONDS:900}
+      from-address: ${AUTH_EMAIL_FROM_ADDRESS:}
+      from-name: ${AUTH_EMAIL_FROM_NAME:XJTUhub}
     session:
       cookie-name: ${AUTH_SESSION_COOKIE_NAME:XJTUHUB_SESSION}
       ttl-days: ${AUTH_SESSION_TTL_DAYS:30}

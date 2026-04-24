@@ -19,6 +19,8 @@ public class AuthProperties {
         private int tokenCreateWindowSeconds = 3600;
         private int tokenVerifyLimit = 10;
         private int tokenVerifyWindowSeconds = 900;
+        private String fromAddress;
+        private String fromName = "XJTUhub";
     }
 
     @Getter

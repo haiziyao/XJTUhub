@@ -54,6 +54,8 @@ POST /api/v1/auth/email-tokens
 - 当 `xjtuhub.auth.email.debug-return-token=true` 时，`delivery` 为 `debug_return`，并直接返回明文验证码。
 - 默认通过 `EmailSender` 发送验证码，接口不返回明文验证码。
 - 当前按 `email + purpose` 做创建限流。
+- 当运行环境存在 `spring.mail` 配置时，默认实现为 SMTP 发信。
+- 当运行环境没有可用的 `JavaMailSender` 时，回退到日志发信实现，便于本地开发和测试。
 
 当前错误码：
 
@@ -300,10 +302,11 @@ GET /api/v1/auth/login-events
 
 - 运行环境存在数据库和 MyBatis 会话工厂时，持久层使用 `MybatisAuthStore`。
 - 测试环境默认回退到 `InMemoryAuthStore`。
-- 邮件发送通过 `EmailSender` 抽象，默认实现为 `LoggingEmailSender`。
+- 邮件发送通过 `EmailSender` 抽象；存在 `JavaMailSender` 时使用 `SmtpEmailSender`，否则回退到 `LoggingEmailSender`。
 - 数据访问层已经切换到 MyBatis / MyBatis-Plus。
 - 会话最近活跃时间通过 `sessions.last_seen_at` 维护。
 - 登录会话创建时会写入 `sessions.ip_address`、`sessions.ip_hash`、`sessions.user_agent_hash`。
 - 验证码校验限流优先使用 Redis；当前运行环境没有 `StringRedisTemplate` 时回退到内存实现。
 - 当前用户接口会返回后端计算的 `identitySummary` 和 `identityBindings`，供前端在昵称后展示身份来源与绑定情况。
 - 校园扫码登录目前只预留接口边界，不实现任何伪生产协议逻辑。
+- SMTP 推荐通过环境变量配置 `MAIL_HOST`、`MAIL_PORT`、`MAIL_USERNAME`、`MAIL_PASSWORD`、`AUTH_EMAIL_FROM_ADDRESS`、`AUTH_EMAIL_FROM_NAME`。

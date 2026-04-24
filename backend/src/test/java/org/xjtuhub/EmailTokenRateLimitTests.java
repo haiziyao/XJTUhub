@@ -1,21 +1,24 @@
 package org.xjtuhub;
 
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.web.servlet.MockMvc;
-import org.xjtuhub.auth.EmailSender;
-import org.xjtuhub.auth.EmailSender.EmailMessage;
+
+import java.util.Properties;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,10 +35,16 @@ class EmailTokenRateLimitTests {
     private MockMvc mockMvc;
 
     @MockBean
-    private EmailSender emailSender;
+    private JavaMailSender javaMailSender;
+
+    private MimeMessage createMimeMessage() {
+        return new MimeMessage(Session.getInstance(new Properties()));
+    }
 
     @Test
     void emailTokenRequestUsesSenderWhenDebugReturnDisabled() throws Exception {
+        when(javaMailSender.createMimeMessage()).thenReturn(createMimeMessage());
+
         mockMvc.perform(post("/api/v1/auth/email-tokens")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -50,13 +59,13 @@ class EmailTokenRateLimitTests {
                 .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
                 .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
 
-        ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
-        verify(emailSender, times(1)).send(captor.capture());
-        org.assertj.core.api.Assertions.assertThat(captor.getValue().to()).isEqualTo("sender@example.com");
+        verify(javaMailSender, times(1)).send(org.mockito.ArgumentMatchers.any(jakarta.mail.internet.MimeMessage.class));
     }
 
     @Test
     void emailTokenRequestIsRateLimitedWithinWindow() throws Exception {
+        when(javaMailSender.createMimeMessage()).thenReturn(createMimeMessage());
+
         mockMvc.perform(post("/api/v1/auth/email-tokens")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -80,6 +89,6 @@ class EmailTokenRateLimitTests {
                 .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
                 .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)));
 
-        verify(emailSender, times(1)).send(org.mockito.ArgumentMatchers.any());
+        verify(javaMailSender, times(1)).send(org.mockito.ArgumentMatchers.any(jakarta.mail.internet.MimeMessage.class));
     }
 }
