@@ -9,6 +9,8 @@ interface AuthStore {
 
     Optional<StoredEmailToken> findActiveEmailToken(String email, String purpose, String tokenHash);
 
+    Optional<StoredEmailToken> findLatestEmailToken(String email, String purpose);
+
     void consumeEmailToken(long tokenId, Instant consumedAt);
 
     Optional<StoredUser> findUserByEmail(String email);

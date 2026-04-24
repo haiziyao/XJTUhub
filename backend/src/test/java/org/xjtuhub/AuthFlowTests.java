@@ -54,6 +54,7 @@ class AuthFlowTests {
                 .andExpect(jsonPath("$.data.purpose").value("login"))
                 .andExpect(jsonPath("$.data.delivery").value("debug_return"))
                 .andExpect(jsonPath("$.data.token", not(blankOrNullString())))
+                .andExpect(jsonPath("$.data.token").value(org.hamcrest.Matchers.matchesPattern("^\\d{6}$")))
                 .andExpect(jsonPath("$.requestId", not(blankOrNullString())))
                 .andExpect(jsonPath("$.durationMs", greaterThanOrEqualTo(0)))
                 .andReturn();

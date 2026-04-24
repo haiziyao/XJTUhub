@@ -14,6 +14,7 @@ import org.xjtuhub.common.support.TimeProvider;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
@@ -23,38 +24,57 @@ import java.util.Locale;
 
 @Service
 public class AuthService {
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final AuthStore authStore;
     private final TimeProvider timeProvider;
     private final AuthProperties authProperties;
     private final EmailSender emailSender;
     private final EmailTokenVerifyAttemptStore emailTokenVerifyAttemptStore;
+    private final EmailVerificationCodeStore emailVerificationCodeStore;
 
     public AuthService(
             AuthStore authStore,
             TimeProvider timeProvider,
             AuthProperties authProperties,
             EmailSender emailSender,
-            EmailTokenVerifyAttemptStore emailTokenVerifyAttemptStore
+            EmailTokenVerifyAttemptStore emailTokenVerifyAttemptStore,
+            EmailVerificationCodeStore emailVerificationCodeStore
     ) {
         this.authStore = authStore;
         this.timeProvider = timeProvider;
         this.authProperties = authProperties;
         this.emailSender = emailSender;
         this.emailTokenVerifyAttemptStore = emailTokenVerifyAttemptStore;
+        this.emailVerificationCodeStore = emailVerificationCodeStore;
     }
 
     public EmailTokenCreateResponse createEmailToken(EmailTokenCreateRequest request, HttpServletRequest servletRequest) {
         Instant now = timeProvider.now();
         String email = normalizeEmail(request.email());
         ensureTokenCreateAllowed(email, request.purpose(), now);
-        String rawToken = randomToken();
+        String rawToken = emailVerificationCode();
         Instant expiresAt = now.plus(Duration.ofMinutes(authProperties.getEmail().getTokenTtlMinutes()));
-        authStore.saveEmailToken(email, request.purpose(), sha256(rawToken), expiresAt, now);
+        String tokenHash = sha256(rawToken);
+        authStore.saveEmailToken(email, request.purpose(), tokenHash, expiresAt, now);
+        emailVerificationCodeStore.save(email, request.purpose(), tokenHash, Duration.ofMinutes(authProperties.getEmail().getTokenTtlMinutes()));
         if (!authProperties.getEmail().isDebugReturnToken()) {
             emailSender.send(new EmailSender.EmailMessage(
                     email,
-                    "XJTUhub login token",
-                    "Your verification token is: " + rawToken
+                    "XJTUhub 登录验证码",
+                    """
+                    您好，
+
+                    您正在使用 XJTUhub 进行邮箱登录验证。本次验证码为：
+
+                    %s
+
+                    验证码 5 分钟内有效，仅用于本次登录，请勿转发或泄露给他人。
+
+                    如果这不是您本人发起的操作，可以直接忽略这封邮件。为保障账号安全，建议您确认设备与网络环境是否正常。
+
+                    XJTUhub
+                    """.formatted(rawToken)
             ));
         }
         return new EmailTokenCreateResponse(
@@ -70,28 +90,36 @@ public class AuthService {
         Instant now = timeProvider.now();
         String email = normalizeEmail(request.email());
         ensureTokenVerifyAllowed(email, request.purpose(), now);
-        Optional<AuthStore.StoredEmailToken> token = authStore.findActiveEmailToken(email, request.purpose(), sha256(request.token()));
-        if (token.isEmpty()) {
+        String requestTokenHash = sha256(request.token());
+        String cachedTokenHash = emailVerificationCodeStore.getTokenHash(email, request.purpose());
+        Optional<AuthStore.StoredEmailToken> latestToken = authStore.findLatestEmailToken(email, request.purpose());
+        if (latestToken.isEmpty()) {
             emailTokenVerifyAttemptStore.recordFailure(email, request.purpose(), now);
             authStore.recordLoginEvent(null, "email", "email_token_login", false, "token_invalid", clientIp(servletRequest), hashNullable(clientIp(servletRequest)), hashNullable(userAgent(servletRequest)), now);
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_EMAIL_TOKEN_INVALID", "Email token is invalid.");
         }
-        if (token.get().consumedAt() != null) {
+        if (latestToken.get().consumedAt() != null) {
             emailTokenVerifyAttemptStore.recordFailure(email, request.purpose(), now);
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_EMAIL_TOKEN_CONSUMED", "Email token has already been used.");
         }
-        if (!token.get().expiresAt().isAfter(now)) {
+        if (!latestToken.get().expiresAt().isAfter(now)) {
             emailTokenVerifyAttemptStore.recordFailure(email, request.purpose(), now);
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_EMAIL_TOKEN_EXPIRED", "Email token has expired.");
+        }
+        if (cachedTokenHash == null || !cachedTokenHash.equals(requestTokenHash) || !latestToken.get().tokenHash().equals(requestTokenHash)) {
+            emailTokenVerifyAttemptStore.recordFailure(email, request.purpose(), now);
+            authStore.recordLoginEvent(null, "email", "email_token_login", false, "token_invalid", clientIp(servletRequest), hashNullable(clientIp(servletRequest)), hashNullable(userAgent(servletRequest)), now);
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_EMAIL_TOKEN_INVALID", "Email token is invalid.");
         }
 
         AuthStore.StoredUser user = authStore.findUserByEmail(email)
                 .orElseGet(() -> authStore.createUserWithEmailIdentity(email, defaultNickname(email), now));
-        authStore.consumeEmailToken(token.get().id(), now);
+        authStore.consumeEmailToken(latestToken.get().id(), now);
+        emailVerificationCodeStore.delete(email, request.purpose());
         authStore.markEmailIdentityVerified(user.id(), email, now);
         emailTokenVerifyAttemptStore.clearFailures(email, request.purpose());
 
-        String rawSessionToken = randomToken() + randomToken();
+        String rawSessionToken = sessionToken();
         Instant sessionExpiresAt = now.plus(Duration.ofDays(authProperties.getSession().getTtlDays()));
         String ipAddress = clientIp(servletRequest);
         String ipHash = hashNullable(ipAddress);
@@ -342,8 +370,14 @@ public class AuthService {
         return email.trim().toLowerCase(Locale.ROOT);
     }
 
-    private String randomToken() {
-        return Long.toHexString(Double.doubleToLongBits(Math.random())) + Long.toHexString(System.nanoTime());
+    private String sessionToken() {
+        byte[] randomBytes = new byte[32];
+        SECURE_RANDOM.nextBytes(randomBytes);
+        return HexFormat.of().formatHex(randomBytes);
+    }
+
+    private String emailVerificationCode() {
+        return "%06d".formatted(SECURE_RANDOM.nextInt(1_000_000));
     }
 
     private String userAgent(HttpServletRequest request) {

@@ -23,6 +23,17 @@ public class AuthConfiguration {
     }
 
     @Bean
+    EmailVerificationCodeStore emailVerificationCodeStore(
+            ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider
+    ) {
+        StringRedisTemplate stringRedisTemplate = stringRedisTemplateProvider.getIfAvailable();
+        if (stringRedisTemplate != null) {
+            return new RedisEmailVerificationCodeStore(stringRedisTemplate);
+        }
+        return new InMemoryEmailVerificationCodeStore();
+    }
+
+    @Bean
     EmailSender emailSender(
             ObjectProvider<JavaMailSender> javaMailSenderProvider,
             AuthProperties authProperties

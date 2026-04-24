@@ -21,7 +21,7 @@ POST /api/v1/auth/email-tokens
 
 用途：
 
-- 为邮箱登录创建一次性验证码。
+- 为邮箱登录创建一次性 6 位数字验证码。
 
 请求：
 
@@ -53,6 +53,9 @@ POST /api/v1/auth/email-tokens
 
 - 当 `xjtuhub.auth.email.debug-return-token=true` 时，`delivery` 为 `debug_return`，并直接返回明文验证码。
 - 默认通过 `EmailSender` 发送验证码，接口不返回明文验证码。
+- 当前验证码格式为固定 6 位数字字符串。
+- 活跃验证码会写入 Redis，key 前缀为 `xjtuhub:auth:email-code:`。
+- 验证码活跃态 TTL 固定为 5 分钟。
 - 当前按 `email + purpose` 做创建限流。
 - 当运行环境存在 `spring.mail` 配置时，默认实现为 SMTP 发信。
 - 当运行环境没有可用的 `JavaMailSender` 时，回退到日志发信实现，便于本地开发和测试。
@@ -310,3 +313,4 @@ GET /api/v1/auth/login-events
 - 当前用户接口会返回后端计算的 `identitySummary` 和 `identityBindings`，供前端在昵称后展示身份来源与绑定情况。
 - 校园扫码登录目前只预留接口边界，不实现任何伪生产协议逻辑。
 - SMTP 推荐通过环境变量配置 `MAIL_HOST`、`MAIL_PORT`、`MAIL_USERNAME`、`MAIL_PASSWORD`、`AUTH_EMAIL_FROM_ADDRESS`、`AUTH_EMAIL_FROM_NAME`。
+- 默认验证码有效期配置为 `AUTH_EMAIL_TOKEN_TTL_MINUTES=5`。

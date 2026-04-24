@@ -25,6 +25,7 @@ The current backend skeleton includes:
   - `PATCH /api/v1/users/me`
 - Email token creation supports rate limiting and a pluggable sender interface.
 - Email token delivery supports SMTP via Spring Mail and falls back to logging when mail is not configured.
+- Active email verification codes are cached in Redis with a dedicated key prefix and a 5-minute TTL.
 - Email token verification rate limiting prefers Redis and falls back to in-memory storage.
 - Session security metadata persists IP/IP hash/user-agent hash in the session store.
 - Flyway migrations mirrored from `../database/mysql`.
@@ -63,6 +64,7 @@ MAIL_SMTP_AUTH
 MAIL_SMTP_STARTTLS_ENABLE
 AUTH_EMAIL_FROM_ADDRESS
 AUTH_EMAIL_FROM_NAME
+AUTH_EMAIL_TOKEN_TTL_MINUTES
 FLYWAY_ENABLED
 ```
 

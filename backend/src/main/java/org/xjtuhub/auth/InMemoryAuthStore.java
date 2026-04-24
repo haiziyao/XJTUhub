@@ -48,6 +48,14 @@ class InMemoryAuthStore implements AuthStore {
     }
 
     @Override
+    public Optional<StoredEmailToken> findLatestEmailToken(String email, String purpose) {
+        return tokens.values().stream()
+                .filter(token -> token.email().equals(email))
+                .filter(token -> token.purpose().equals(purpose))
+                .max(Comparator.comparing(StoredEmailToken::createdAt));
+    }
+
+    @Override
     public void consumeEmailToken(long tokenId, Instant consumedAt) {
         StoredEmailToken token = tokens.get(tokenId);
         if (token == null) {

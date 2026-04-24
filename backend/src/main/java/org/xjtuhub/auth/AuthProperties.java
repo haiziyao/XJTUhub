@@ -13,7 +13,7 @@ public class AuthProperties {
     @Getter
     @Setter
     public static class Email {
-        private int tokenTtlMinutes = 10;
+        private int tokenTtlMinutes = 5;
         private boolean debugReturnToken = false;
         private int tokenCreateLimit = 5;
         private int tokenCreateWindowSeconds = 3600;

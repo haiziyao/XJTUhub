@@ -82,6 +82,18 @@ class MybatisAuthStore implements AuthStore {
     }
 
     @Override
+    public Optional<StoredEmailToken> findLatestEmailToken(String email, String purpose) {
+        EmailVerificationTokenEntity entity = tokenMapper.selectOne(
+                new LambdaQueryWrapper<EmailVerificationTokenEntity>()
+                        .eq(EmailVerificationTokenEntity::getEmail, email)
+                        .eq(EmailVerificationTokenEntity::getPurpose, purpose)
+                        .orderByDesc(EmailVerificationTokenEntity::getCreatedAt)
+                        .last("LIMIT 1")
+        );
+        return Optional.ofNullable(entity).map(this::toStoredEmailToken);
+    }
+
+    @Override
     public void consumeEmailToken(long tokenId, Instant consumedAt) {
         tokenMapper.update(
                 null,

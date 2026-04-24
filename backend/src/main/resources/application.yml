@@ -38,7 +38,7 @@ mybatis-plus:
 xjtuhub:
   auth:
     email:
-      token-ttl-minutes: ${AUTH_EMAIL_TOKEN_TTL_MINUTES:10}
+      token-ttl-minutes: ${AUTH_EMAIL_TOKEN_TTL_MINUTES:5}
       debug-return-token: ${AUTH_EMAIL_DEBUG_RETURN_TOKEN:false}
       token-create-limit: ${AUTH_EMAIL_TOKEN_CREATE_LIMIT:5}
       token-create-window-seconds: ${AUTH_EMAIL_TOKEN_CREATE_WINDOW_SECONDS:3600}

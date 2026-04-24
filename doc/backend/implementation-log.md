@@ -100,6 +100,38 @@
 - `backend/README.md`
 - `doc/backend/modules/auth/api.md`
 
+### `Uncommitted six-digit email verification code`
+
+完成内容：
+
+- 邮箱登录验证码从内部长 token 调整为固定 6 位数字验证码。
+- 登录邮件标题和文案统一改为“验证码”语义，不再向用户暴露内部 token 风格字符串。
+- 会话 token 生成同步改为基于 `SecureRandom` 的随机字节十六进制串。
+- 增加验证码格式测试，防止回退。
+
+影响范围：
+
+- `backend/src/main/java/org/xjtuhub/auth/AuthService.java`
+- `backend/src/test/java/org/xjtuhub/AuthFlowTests.java`
+- `doc/backend/modules/auth/api.md`
+
+### `Uncommitted redis-backed email verification codes`
+
+完成内容：
+
+- 邮箱验证码活跃态新增 `EmailVerificationCodeStore` 抽象。
+- Redis 环境下使用 `RedisEmailVerificationCodeStore`，key 前缀固定为 `xjtuhub:auth:email-code:`。
+- 验证码 Redis TTL 固定为 5 分钟；无 Redis 时回退到内存实现，方便测试与本地开发。
+- 数据库中的 `email_verification_tokens` 继续保留审计和状态轨迹，避免丢失已使用/已过期语义。
+- 邮件内容改为正式验证码通知模板。
+
+影响范围：
+
+- `backend/src/main/java/org/xjtuhub/auth`
+- `backend/src/test/java/org/xjtuhub/auth`
+- `backend/README.md`
+- `doc/backend/modules/auth/api.md`
+
 ## 当前建议接力点
 
 按优先级建议后续继续实现：
